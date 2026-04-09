@@ -1,0 +1,387 @@
+```react
+import React, { useState, useEffect } from 'react';
+import { Activity, Utensils, Scale, ShieldAlert, Clock, Target, PlusCircle, Flame, Droplets, TrendingDown, Info, Edit2, Trash2, X, Check } from 'lucide-react';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('diet');
+  const [editingId, setEditingId] = useState(null);
+  const [logs, setLogs] = useState([
+    { id: 1, type: 'diet', time: '09:00', name: '越南河粉', category: 'carb', impact: 'high', rating: '碳水過量', feedback: '早餐澱粉太重，今日之後要還債。' },
+    { id: 2, type: 'diet', time: '13:00', name: '雞髀肉牛油果 Burrito', category: 'protein', impact: 'medium', rating: '平衡補給', feedback: '優質脂肪同蛋白，打波前嘅好燃料。' },
+    { id: 3, type: 'diet', time: '16:15', name: '三角飯糰', category: 'carb', impact: 'high', rating: '戰前充能', feedback: '為羽毛球儲備醣原，食得有理。' },
+    { id: 4, type: 'exercise', time: '17:00', name: '羽毛球 (專業模式)', duration: 128, calories: 922 }, // 根據用戶上傳的圖片精準修正
+    { id: 5, type: 'diet', time: '19:15', name: '水煮蛋 + 菠菜', category: 'protein', impact: 'low', rating: '完美修復', feedback: '優質蛋白同纖維，正係肌肉最需要嘅野。' },
+    { id: 6, type: 'diet', time: '19:30', name: '小餅乾 (營養成分 143kcal)', category: 'cheat', impact: 'medium', rating: '控糖警戒', feedback: '雖然有 143kcal，但運動量夠大，可以抵銷，但要注意糖分。' },
+  ]);
+
+  const [stats, setStats] = useState({
+    weight: 75.0,
+    bodyFat: 28.5,
+    targetWeight: 60.0,
+    targetFat: 20.0,
+    water: 1.85, 
+  });
+
+  const [advisorMessage, setAdvisorMessage] = useState({});
+
+  // Form & Edit states
+  const [foodName, setFoodName] = useState('');
+  const [foodCat, setFoodCat] = useState('protein');
+  const [exName, setExName] = useState('羽毛球');
+  const [exDuration, setExDuration] = useState(60);
+  const [editValue, setEditValue] = useState({});
+  const [newWeight, setNewWeight] = useState(stats.weight);
+  const [newFat, setNewFat] = useState(stats.bodyFat);
+
+  useEffect(() => {
+    analyzeSituation();
+  }, [logs, stats.weight, stats.bodyFat]);
+
+  const getFoodAnalysis = (name, cat) => {
+    const n = name.toLowerCase();
+    if (cat === 'cheat') return { rating: '熱量陷阱', feedback: '呢樣野油/糖太高，會阻礙燃脂。', impact: 'high' };
+    if (n.includes('蛋') || n.includes('雞') || cat === 'protein') return { rating: '肌肉燃料', feedback: '優質蛋白質，修補肌肉必備。', impact: 'low' };
+    if (n.includes('菜') || n.includes('菇') || n.includes('瓜')) return { rating: '去水神器', feedback: '高纖高鉀，幫你排走多餘鈉質。', impact: 'low' };
+    if (cat === 'carb') return { rating: '能量補充', feedback: '今日澱粉份量要注意，夜晚禁澱粉。', impact: 'high' };
+    return { rating: '正常攝取', feedback: '中規中矩，記得注意份量。', impact: 'medium' };
+  };
+
+  const analyzeSituation = () => {
+    const todayLogs = logs;
+    const carbCount = todayLogs.filter(l => l.type === 'diet' && (l.category === 'carb' || l.category === 'cheat')).length;
+    const totalBurn = todayLogs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
+    
+    let advice = {
+      title: "軍師分析中...",
+      content: "數據正在同步，隨時準備下達指令。",
+      nextMeal: "視乎狀況",
+      action: "等待指令",
+      status: "normal"
+    };
+
+    if (totalBurn >= 900) {
+      advice = {
+        title: "🔥 戰神級別能量消耗！",
+        content: `今日打波燒咗 ${totalBurn} kcal，直逼 1000 大關！你而家個身體係「燃脂火爐」。`,
+        nextMeal: "睡前 2 小時",
+        action: "獎勵：可以食多一隻水煮蛋，但要避開精緻澱粉。",
+        status: "success"
+      };
+    } else if (carbCount >= 3) {
+      advice = {
+        title: "⚠️ 澱粉配額紅區警戒！",
+        content: `你今日食咗 ${carbCount} 次澱粉。就算你打咗兩個鐘波，都只係剛好抵銷咋。`,
+        nextMeal: "明早 8:00 AM",
+        action: "晚餐戰術：禁食澱粉，只准食菜同肉。",
+        status: "warning"
+      };
+    } else {
+      advice = {
+        title: "🛡️ 穩定減脂期",
+        content: "維持目前節奏。今日運動量足夠，晚餐唔爆卡，聽日一定輕咗。",
+        nextMeal: "晚餐時間",
+        action: "清雞湯蔬菜煲 + 豆腐。高飽腹、低負擔。",
+        status: "normal"
+      };
+    }
+    setAdvisorMessage(advice);
+  };
+
+  const handleAddFood = (e) => {
+    e.preventDefault();
+    if (!foodName) return;
+    const analysis = getFoodAnalysis(foodName, foodCat);
+    const newLog = {
+      id: Date.now(),
+      type: 'diet',
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      name: foodName,
+      category: foodCat,
+      ...analysis
+    };
+    setLogs([...logs, newLog]);
+    setFoodName('');
+  };
+
+  // 優化後的卡路里計算法（參考用戶上傳的專業數據）
+  const calculateCalories = (name, duration) => {
+    const metValues = {
+      '羽毛球': 7.2, // 高強度羽毛球 MET
+      '急步行': 4.5,
+      '跑步': 9.8,
+      '健身': 6.0
+    };
+    const met = metValues[name] || 5.0;
+    // 簡單公式：MET * 體重(kg) * 時長(hr)
+    // 根據你的圖，128min 燒 922kcal，代表你打得非常認真（殺球多）
+    return Math.round(met * stats.weight * (duration / 60) * 1.2); // 加上 1.2 的強度修正系數
+  };
+
+  const handleAddExercise = (e) => {
+    e.preventDefault();
+    const calories = calculateCalories(exName, exDuration);
+    const newLog = {
+      id: Date.now(),
+      type: 'exercise',
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      name: exName,
+      duration: parseInt(exDuration),
+      calories: calories
+    };
+    setLogs([...logs, newLog]);
+  };
+
+  const startEdit = (log) => {
+    setEditingId(log.id);
+    setEditValue({ ...log });
+  };
+
+  const saveEdit = () => {
+    const updatedLogs = logs.map(log => {
+      if (log.id === editingId) {
+        if (log.type === 'diet') {
+          const analysis = getFoodAnalysis(editValue.name, editValue.category);
+          return { ...editValue, ...analysis };
+        } else {
+          return { ...editValue, calories: calculateCalories(editValue.name, editValue.duration) };
+        }
+      }
+      return log;
+    });
+    setLogs(updatedLogs);
+    setEditingId(null);
+  };
+
+  const deleteLog = (id) => {
+    setLogs(logs.filter(log => log.id !== id));
+  };
+
+  const handleUpdateStats = (e) => {
+    e.preventDefault();
+    setStats({
+      ...stats,
+      weight: parseFloat(newWeight),
+      bodyFat: parseFloat(newFat)
+    });
+    setActiveTab('diet');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-24">
+      {/* Header */}
+      <div className="bg-[#0F172A] text-white pt-10 pb-14 px-6 rounded-b-[2.5rem] shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+        <div className="flex justify-between items-center mb-8 relative z-10">
+          <h1 className="text-xl font-black tracking-tight flex items-center uppercase italic">
+            <div className="bg-emerald-500 p-1.5 rounded-lg mr-2 shadow-lg shadow-emerald-500/20">
+              <ShieldAlert className="w-5 h-5 text-slate-900" />
+            </div>
+            Diet Commander
+          </h1>
+          <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[11px] font-bold">
+            PRO MODE · 羽球人 Lv.17
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 relative z-10">
+          <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
+            <span className="text-[10px] uppercase font-black text-slate-500 tracking-wider flex items-center mb-2">
+              <Scale className="w-3 h-3 mr-1 text-blue-400" /> Weight
+            </span>
+            <div className="flex items-baseline">
+              <span className="text-4xl font-black tabular-nums">{stats.weight}</span>
+              <span className="text-xs ml-1 font-bold text-slate-400">KG</span>
+            </div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
+            <span className="text-[10px] uppercase font-black text-slate-500 tracking-wider flex items-center mb-2">
+              <TrendingDown className="w-3 h-3 mr-1 text-emerald-400" /> Body Fat
+            </span>
+            <div className="flex items-baseline">
+              <span className="text-4xl font-black tabular-nums">{stats.bodyFat}</span>
+              <span className="text-xs ml-1 font-bold text-slate-400">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto px-5 -mt-10 relative z-20">
+        {/* Advisor Card */}
+        <div className={`p-6 rounded-[2.5rem] shadow-2xl mb-8 border-2 transition-all duration-500 ${
+          advisorMessage.status === 'warning' ? 'bg-amber-500 border-amber-400 text-white' :
+          advisorMessage.status === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' :
+          'bg-slate-800 border-slate-700 text-white'
+        }`}>
+          <div className="flex items-center mb-4">
+            <Info className="w-5 h-5 mr-3" />
+            <h2 className="text-lg font-black italic">{advisorMessage.title}</h2>
+          </div>
+          <p className="text-sm font-medium leading-relaxed mb-6 opacity-95">「{advisorMessage.content}」</p>
+          <div className="space-y-3">
+            <div className="bg-black/20 p-4 rounded-2xl flex items-center">
+              <Clock className="w-4 h-4 mr-3" />
+              <div>
+                <p className="text-[10px] font-black uppercase opacity-60">Next Meal</p>
+                <p className="text-sm font-black">{advisorMessage.nextMeal}</p>
+              </div>
+            </div>
+            <div className="bg-black/20 p-4 rounded-2xl flex items-center">
+              <Target className="w-4 h-4 mr-3" />
+              <div>
+                <p className="text-[10px] font-black uppercase opacity-60">Tactical Action</p>
+                <p className="text-sm font-bold">{advisorMessage.action}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-slate-200/50 backdrop-blur-md p-1.5 rounded-2xl flex mb-8">
+          {['diet', 'exercise', 'stats'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                activeTab === tab ? 'bg-white shadow-lg text-slate-900' : 'text-slate-500'
+              }`}>
+              {tab === 'diet' ? 'Meal' : tab === 'exercise' ? 'Activity' : 'Vitals'}
+            </button>
+          ))}
+        </div>
+
+        {/* Form */}
+        <div className="bg-white p-7 rounded-[3rem] shadow-xl mb-10 border border-white">
+          {activeTab === 'diet' && (
+            <form onSubmit={handleAddFood} className="space-y-5">
+              <h3 className="font-black text-xl italic uppercase tracking-tighter text-slate-800">New Supply</h3>
+              <input type="text" placeholder="你食左啲乜？" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none"
+                value={foodName} onChange={(e) => setFoodName(e.target.value)} />
+              <div className="grid grid-cols-2 gap-3">
+                {['protein', 'veg', 'carb', 'cheat'].map(c => (
+                  <button key={c} type="button" onClick={() => setFoodCat(c)}
+                    className={`py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all ${
+                      foodCat === c ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-50 bg-slate-50 text-slate-400'
+                    }`}>
+                    {c.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Confirm Supply</button>
+            </form>
+          )}
+
+          {activeTab === 'exercise' && (
+            <form onSubmit={handleAddExercise} className="space-y-5">
+              <h3 className="font-black text-xl italic uppercase tracking-tighter">Combat Output</h3>
+              <select className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none"
+                value={exName} onChange={(e) => setExName(e.target.value)}>
+                <option value="羽毛球">🏸 羽毛球</option>
+                <option value="急步行">🚶‍♂️ 急步行</option>
+                <option value="跑步">🏃‍♂️ 跑步</option>
+                <option value="健身">🏋️‍♂️ 健身</option>
+              </select>
+              <div className="flex items-center bg-slate-100 rounded-2xl px-6">
+                <Clock className="w-5 h-5 text-slate-400 mr-4" />
+                <input type="number" className="bg-transparent py-4 w-full outline-none text-sm font-bold"
+                  value={exDuration} onChange={(e) => setExDuration(e.target.value)} />
+                <span className="text-slate-400 font-black text-[10px] uppercase">Mins</span>
+              </div>
+              <button className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Log Combat</button>
+            </form>
+          )}
+
+          {activeTab === 'stats' && (
+            <form onSubmit={handleUpdateStats} className="space-y-6">
+              <h3 className="font-black text-xl italic uppercase tracking-tighter">Update Vitals</h3>
+              <div className="space-y-5">
+                <input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none"
+                  value={newWeight} onChange={(e) => setNewWeight(e.target.value)} placeholder="Weight" />
+                <input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none"
+                  value={newFat} onChange={(e) => setNewFat(e.target.value)} placeholder="Fat %" />
+              </div>
+              <button className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Sync Vitals</button>
+            </form>
+          )}
+        </div>
+
+        {/* Timeline */}
+        <div className="space-y-5 pb-10">
+          <h3 className="font-black text-slate-900 uppercase italic tracking-tighter text-lg px-3">Daily Briefing</h3>
+          <div className="space-y-4">
+            {logs.slice().reverse().map((log) => (
+              <div key={log.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 relative group">
+                {editingId === log.id ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <input className="flex-1 px-3 py-2 bg-slate-50 border rounded-lg text-sm font-bold"
+                        value={editValue.name} onChange={(e) => setEditValue({ ...editValue, name: e.target.value })} />
+                      <input type="text" className="w-20 px-2 py-2 bg-slate-50 border rounded-lg text-xs"
+                        value={editValue.time} onChange={(e) => setEditValue({ ...editValue, time: e.target.value })} />
+                    </div>
+                    {log.type === 'exercise' && (
+                      <div className="flex flex-col space-y-2">
+                         <label className="text-[9px] font-bold text-slate-400 ml-1">DURATION (MINS)</label>
+                         <input type="number" className="w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm"
+                           value={editValue.duration} onChange={(e) => setEditValue({ ...editValue, duration: parseInt(e.target.value) })} />
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                      <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold flex justify-center items-center">
+                        <Check className="w-4 h-4 mr-1" /> Save
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-200 py-2 rounded-xl text-xs font-bold flex justify-center items-center">
+                        <X className="w-4 h-4 mr-1" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="absolute top-4 right-6 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => startEdit(log)} className="p-2 bg-slate-50 text-slate-400 hover:text-blue-500 rounded-full">
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => deleteLog(log.id)} className="p-2 bg-slate-50 text-slate-400 hover:text-rose-500 rounded-full">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center mb-4">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mr-4 shadow-sm ${log.type === 'exercise' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'}`}>
+                        {log.type === 'exercise' ? <Flame className="w-5 h-5" /> : <Utensils className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900">{log.name}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{log.time}</p>
+                      </div>
+                    </div>
+                    {log.type === 'diet' ? (
+                      <div className="space-y-2">
+                        <div className={`inline-block px-2 py-1 rounded-lg text-[8px] font-black uppercase border-2 ${
+                          log.impact === 'high' ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'
+                        }`}>{log.rating}</div>
+                        <div className="bg-slate-50/80 p-3 rounded-xl text-[10px] font-bold text-slate-600 border-l-4 border-slate-200">軍師：「{log.feedback}」</div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs italic text-emerald-600">
+                          {log.calories} KCAL
+                        </span>
+                        <span className="text-[10px] font-black text-slate-400">{log.duration} MINS</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Water Button */}
+      <button onClick={() => setStats({...stats, water: +(stats.water + 0.25).toFixed(2)})}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-[2rem] shadow-2xl flex flex-col items-center justify-center hover:scale-110 active:scale-95 transition-all border-4 border-white z-50">
+        <Droplets className="w-6 h-6 mb-0.5" />
+        <span className="text-[8px] font-black">{stats.water}L</span>
+      </button>
+    </div>
+  );
+}
+
+```
