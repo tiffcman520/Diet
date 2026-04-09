@@ -11,12 +11,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        /* 隱藏數字輸入框的上下箭頭 */
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
@@ -28,61 +25,55 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- Lucide 圖標組件封裝 ---
-        const Icon = ({ name, className }) => {
-            const [iconSvg, setIconSvg] = useState('');
-            useEffect(() => {
-                if (window.lucide && window.lucide.icons[name]) {
-                    setIconSvg(window.lucide.icons[name].toSvg({ class: className }));
-                }
-            }, [name, className]);
-            return <span dangerouslySetInnerHTML={{ __html: iconSvg }} />;
-        };
-
         function App() {
-            // --- 狀態管理 ---
             const [activeTab, setActiveTab] = useState('diet');
             const [editingId, setEditingId] = useState(null);
             
-            // 預設戰鬥紀錄
-            const [logs, setLogs] = useState([
-                { id: 1, type: 'diet', time: '09:00', name: '越南河粉', category: 'carb', impact: 'high', rating: '碳水過量', feedback: '早餐澱粉太重，今日之後要還債。' },
-                { id: 2, type: 'diet', time: '13:00', name: '雞髀肉牛油果 Burrito', category: 'protein', impact: 'medium', rating: '平衡補給', feedback: '優質脂肪同蛋白，打波前嘅好燃料。' },
-                { id: 3, type: 'diet', time: '16:15', name: '三角飯糰', category: 'carb', impact: 'high', rating: '戰前充能', feedback: '為羽毛球儲備醣原，食得有理。' },
-                { id: 4, type: 'exercise', time: '17:00', name: '羽毛球 (專業模式)', duration: 128, calories: 922 },
-                { id: 5, type: 'diet', time: '19:15', name: '水煮蛋 + 菠菜', category: 'protein', impact: 'low', rating: '完美修復', feedback: '優質蛋白同纖維，正係肌肉最需要嘅野。' },
-                { id: 6, type: 'diet', time: '19:30', name: '小餅乾 (143kcal)', category: 'cheat', impact: 'medium', rating: '控糖警戒', feedback: '運動量夠大可抵銷，但要注意糖分。' },
-            ]);
-
-            const [stats, setStats] = useState({
-                weight: 75.0,
-                bodyFat: 28.5,
-                targetWeight: 60.0,
-                targetFat: 20.0,
-                water: 1.85, 
+            // --- 狀態管理 (LocalStorage) ---
+            
+            // 1. 每日即時紀錄
+            const [logs, setLogs] = useState(() => {
+                const saved = localStorage.getItem('diet_logs');
+                return saved ? JSON.parse(saved) : [];
             });
+
+            // 2. 當前身體狀態
+            const [stats, setStats] = useState(() => {
+                const saved = localStorage.getItem('diet_stats');
+                return saved ? JSON.parse(saved) : {
+                    weight: 75.0,
+                    bodyFat: 28.5,
+                    targetWeight: 60.0,
+                    targetFat: 20.0,
+                    water: 0, 
+                };
+            });
+
+            // 3. 歷史存檔 (新增項目)
+            const [history, setHistory] = useState(() => {
+                const saved = localStorage.getItem('diet_history');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            useEffect(() => { localStorage.setItem('diet_logs', JSON.stringify(logs)); }, [logs]);
+            useEffect(() => { localStorage.setItem('diet_stats', JSON.stringify(stats)); }, [stats]);
+            useEffect(() => { localStorage.setItem('diet_history', JSON.stringify(history)); }, [history]);
 
             const [advisorMessage, setAdvisorMessage] = useState({});
             
-            // 表單輸入狀態
+            // 表單狀態
             const [foodName, setFoodName] = useState('');
             const [foodCat, setFoodCat] = useState('protein');
             const [exName, setExName] = useState('羽毛球');
             const [exDuration, setExDuration] = useState(60);
             const [newWeight, setNewWeight] = useState(stats.weight);
             const [newFat, setNewFat] = useState(stats.bodyFat);
-            
-            // 編輯狀態
             const [editValue, setEditValue] = useState({});
 
-            // 監聽數據變化以更新軍師建議
-            useEffect(() => {
-                analyzeSituation();
-            }, [logs, stats.weight, stats.bodyFat]);
+            useEffect(() => { analyzeSituation(); }, [logs, stats.weight, stats.bodyFat]);
 
             // --- 核心邏輯 ---
 
-            // 飲食評價引擎
             const getFoodAnalysis = (name, cat) => {
                 const n = name.toLowerCase();
                 if (cat === 'cheat') return { rating: '熱量陷阱', feedback: '油/糖太高，會阻礙燃脂。下次考慮換成堅果。', impact: 'high' };
@@ -92,7 +83,6 @@
                 return { rating: '正常攝取', feedback: '中規中矩，記得注意份量。', impact: 'medium' };
             };
 
-            // 軍師戰術推演
             const analyzeSituation = () => {
                 const carbCount = logs.filter(l => l.type === 'diet' && (l.category === 'carb' || l.category === 'cheat')).length;
                 const totalBurn = logs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
@@ -127,11 +117,9 @@
                 setAdvisorMessage(advice);
             };
 
-            // 卡路里科學計算法 (加入強度系數)
             const calculateCalories = (name, duration) => {
                 const metValues = { '羽毛球': 7.2, '急步行': 4.5, '跑步': 9.8, '健身': 6.0 };
                 const met = metValues[name] || 5.0;
-                // 根據真實數據(128mins = 922kcal)反推的 1.2 強度系數
                 return Math.round(met * stats.weight * (duration / 60) * 1.2);
             };
 
@@ -167,15 +155,38 @@
 
             const handleUpdateStats = (e) => {
                 e.preventDefault();
-                setStats({ ...stats, weight: parseFloat(newWeight), bodyFat: parseFloat(newFat) });
+                setStats({ ...stats, weight: parseFloat(newWeight) || stats.weight, bodyFat: parseFloat(newFat) || stats.bodyFat });
                 setActiveTab('diet');
             };
 
-            // --- 編輯功能 ---
-            const startEdit = (log) => {
-                setEditingId(log.id);
-                setEditValue({ ...log });
+            // --- 重置與封存邏輯 ---
+            const archiveAndReset = () => {
+                if(window.confirm("軍師確認：封存今日數據並重置紀錄？")) {
+                    const totalBurn = logs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
+                    const mealCount = logs.filter(l => l.type === 'diet').length;
+                    
+                    const archiveEntry = {
+                        date: new Date().toLocaleDateString(),
+                        weight: stats.weight,
+                        bodyFat: stats.bodyFat,
+                        totalBurn,
+                        mealCount,
+                        water: stats.water
+                    };
+
+                    setHistory([archiveEntry, ...history]);
+                    setLogs([]);
+                    setStats({...stats, water: 0});
+                }
             };
+
+            const deleteArchive = (index) => {
+                if(window.confirm("確定要刪除這條歷史紀錄？")) {
+                    setHistory(history.filter((_, i) => i !== index));
+                }
+            };
+
+            const startEdit = (log) => { setEditingId(log.id); setEditValue({ ...log }); };
 
             const saveEdit = () => {
                 const updatedLogs = logs.map(log => {
@@ -199,40 +210,30 @@
                 }
             };
 
-            // --- 渲染 UI ---
             return (
                 <div className="min-h-screen pb-24">
-                    {/* Header 面板 */}
-                    <div className="bg-[#0F172A] text-white pt-10 pb-14 px-6 rounded-b-[2.5rem] shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full -ml-16 -mb-16 blur-3xl"></div>
-                        
+                    {/* Header */}
+                    <div className="bg-[#0F172A] text-white pt-10 pb-14 px-6 rounded-b-[2.5rem] shadow-2xl relative">
                         <div className="flex justify-between items-center mb-8 relative z-10">
                             <h1 className="text-xl font-black italic flex items-center uppercase tracking-tight">
-                                <div className="bg-emerald-500 p-1.5 rounded-lg mr-2 shadow-lg shadow-emerald-500/20">
-                                    <Icon name="shield-alert" className="w-5 h-5 text-slate-900" />
-                                </div>
+                                <div className="bg-emerald-500 p-1.5 rounded-lg mr-2 text-slate-900 text-lg leading-none">🛡️</div>
                                 Diet Commander
                             </h1>
                             <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[11px] font-bold">
-                                PRO MODE · 羽球人
+                                DATA PERSISTED
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 relative z-10">
                             <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
-                                <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">
-                                    <Icon name="scale" className="w-3 h-3 mr-1 text-blue-400" /> Weight
-                                </span>
+                                <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">⚖️ Weight</span>
                                 <div className="flex items-baseline">
                                     <span className="text-4xl font-black tabular-nums">{stats.weight}</span>
                                     <span className="text-xs ml-1 font-bold text-slate-400">KG</span>
                                 </div>
                             </div>
                             <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
-                                <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">
-                                    <Icon name="trending-down" className="w-3 h-3 mr-1 text-emerald-400" /> Body Fat
-                                </span>
+                                <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">📉 Body Fat</span>
                                 <div className="flex items-baseline">
                                     <span className="text-4xl font-black tabular-nums">{stats.bodyFat}</span>
                                     <span className="text-xs ml-1 font-bold text-slate-400">%</span>
@@ -242,71 +243,54 @@
                     </div>
 
                     <div className="max-w-md mx-auto px-5 -mt-10 relative z-20">
-                        {/* 軍師推演卡片 */}
+                        {/* 軍師卡片 */}
                         <div className={`p-6 rounded-[2.5rem] shadow-xl mb-8 border-2 transition-all ${advisorMessage.status === 'warning' ? 'bg-amber-500 border-amber-400 text-white shadow-amber-200' : advisorMessage.status === 'success' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-200' : 'bg-slate-800 border-slate-700 text-white shadow-slate-300'}`}>
-                            <div className="flex items-center mb-4">
-                                <div className="bg-white/20 p-2 rounded-xl mr-3"><Icon name="info" className="w-5 h-5" /></div>
-                                <h2 className="text-lg font-black italic">{advisorMessage.title}</h2>
-                            </div>
+                            <div className="flex items-center mb-4"><div className="bg-white/20 p-2 rounded-xl mr-3 text-lg leading-none">💡</div><h2 className="text-lg font-black italic">{advisorMessage.title}</h2></div>
                             <p className="text-sm font-medium leading-relaxed mb-6 opacity-95">「{advisorMessage.content}」</p>
                             <div className="space-y-3">
                                 <div className="bg-black/20 p-4 rounded-2xl flex items-center">
-                                    <Icon name="clock" className="w-4 h-4 mr-3 opacity-70" />
+                                    <span className="mr-3 opacity-80 text-lg">⏰</span>
                                     <div><p className="text-[10px] font-black uppercase opacity-60">Next Meal</p><p className="text-sm font-black">{advisorMessage.nextMeal}</p></div>
                                 </div>
                                 <div className="bg-black/20 p-4 rounded-2xl flex items-start">
-                                    <Icon name="target" className="w-4 h-4 mr-3 mt-0.5 opacity-70" />
+                                    <span className="mr-3 mt-0.5 opacity-80 text-lg">🎯</span>
                                     <div><p className="text-[10px] font-black uppercase opacity-60">Tactical Action</p><p className="text-sm font-bold">{advisorMessage.action}</p></div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 分頁按鈕 */}
-                        <div className="bg-slate-200/60 backdrop-blur p-1.5 rounded-2xl flex mb-8">
-                            {['diet', 'exercise', 'stats'].map(tab => (
-                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white shadow-md text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    {tab === 'diet' ? 'Meal' : tab === 'exercise' ? 'Activity' : 'Vitals'}
+                        {/* 分頁控制 */}
+                        <div className="bg-slate-200/60 backdrop-blur p-1.5 rounded-2xl flex mb-8 overflow-x-auto no-scrollbar">
+                            {['diet', 'exercise', 'stats', 'history'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[70px] py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white shadow-md text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    {tab === 'diet' ? 'Meal' : tab === 'exercise' ? 'Activity' : tab === 'stats' ? 'Vitals' : 'History'}
                                 </button>
                             ))}
                         </div>
 
-                        {/* 輸入表單區 */}
+                        {/* 分頁內容 */}
                         <div className="bg-white p-7 rounded-[3rem] shadow-lg shadow-slate-100 mb-10 border border-slate-50">
                             {activeTab === 'diet' && (
                                 <form onSubmit={handleAddFood} className="space-y-5">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">New Supply</h3>
-                                    <input type="text" placeholder="食咗啲乜？ (例如: 菜/肉/包)" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-slate-200" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
+                                    <input type="text" placeholder="食咗啲乜？" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
                                     <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { id: 'protein', label: '🥩 PROTEIN' },
-                                            { id: 'veg', label: '🥬 FIBER' },
-                                            { id: 'carb', label: '🍚 CARBS' },
-                                            { id: 'cheat', label: '🍔 CHEAT' }
-                                        ].map(c => (
-                                            <button key={c.id} type="button" onClick={() => setFoodCat(c.id)} className={`py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all ${foodCat === c.id ? 'border-slate-900 bg-slate-900 text-white scale-[0.98]' : 'border-slate-100 bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
-                                                {c.label}
-                                            </button>
+                                        {[{id:'protein', label:'🥩 PROTEIN'}, {id:'veg', label:'🥬 FIBER'}, {id:'carb', label:'🍚 CARBS'}, {id:'cheat', label:'🍔 CHEAT'}].map(c => (
+                                            <button key={c.id} type="button" onClick={() => setFoodCat(c.id)} className={`py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all ${foodCat === c.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50 text-slate-400'}`}>{c.label}</button>
                                         ))}
                                     </div>
-                                    <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs shadow-lg shadow-slate-200 active:scale-95 transition-all">Confirm Supply</button>
+                                    <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Confirm Supply</button>
                                 </form>
                             )}
 
                             {activeTab === 'exercise' && (
                                 <form onSubmit={handleAddExercise} className="space-y-5">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">Combat Output</h3>
-                                    <select className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-slate-200" value={exName} onChange={(e) => setExName(e.target.value)}>
-                                        <option value="羽毛球">🏸 羽毛球 (高強度)</option>
-                                        <option value="急步行">🚶‍♂️ 急步行</option>
-                                        <option value="跑步">🏃‍♂️ 跑步</option>
-                                        <option value="健身">🏋️‍♂️ 健身 (重訓)</option>
+                                    <select className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={exName} onChange={(e) => setExName(e.target.value)}>
+                                        <option value="羽毛球">🏸 羽毛球</option><option value="急步行">🚶‍♂️ 急步行</option><option value="跑步">🏃‍♂️ 跑步</option><option value="健身">🏋️‍♂️ 健身</option>
                                     </select>
-                                    <div className="flex items-center bg-slate-100 rounded-2xl px-6 focus-within:ring-2 ring-slate-200">
-                                        <Icon name="clock" className="w-5 h-5 text-slate-400 mr-4" />
-                                        <input type="number" placeholder="時長" className="bg-transparent py-4 w-full outline-none text-sm font-bold" value={exDuration} onChange={(e) => setExDuration(e.target.value)} />
-                                        <span className="text-slate-400 font-black text-[10px] uppercase">Mins</span>
-                                    </div>
-                                    <button className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs shadow-lg shadow-emerald-200 active:scale-95 transition-all">Log Combat</button>
+                                    <div className="flex items-center bg-slate-100 rounded-2xl px-6"><span className="text-slate-400 mr-4 text-lg">⏰</span><input type="number" className="bg-transparent py-4 w-full outline-none text-sm font-bold" value={exDuration} onChange={(e) => setExDuration(e.target.value)} /><span className="text-slate-400 font-black text-[10px]">MINS</span></div>
+                                    <button className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Log Combat</button>
                                 </form>
                             )}
 
@@ -314,117 +298,84 @@
                                 <form onSubmit={handleUpdateStats} className="space-y-6">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">Update Vitals</h3>
                                     <div className="space-y-4">
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 block">Weight (KG)</label>
-                                            <input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none focus:ring-2 ring-slate-200" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 block">Body Fat (%)</label>
-                                            <input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none focus:ring-2 ring-slate-200" value={newFat} onChange={(e) => setNewFat(e.target.value)} />
-                                        </div>
+                                        <div><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Weight (KG)</label><input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} /></div>
+                                        <div><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Body Fat (%)</label><input type="number" step="0.1" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-2xl font-black outline-none" value={newFat} onChange={(e) => setNewFat(e.target.value)} /></div>
                                     </div>
-                                    <button className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs shadow-lg shadow-blue-200 active:scale-95 transition-all">Sync Vitals</button>
+                                    <button className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Sync Vitals</button>
                                 </form>
+                            )}
+
+                            {activeTab === 'history' && (
+                                <div className="space-y-4">
+                                    <h3 className="font-black text-xl italic uppercase text-slate-800">History Archives</h3>
+                                    {history.length === 0 ? <p className="text-center text-slate-400 py-4 text-sm font-bold">目前尚無歷史存檔</p> : history.map((h, i) => (
+                                        <div key={i} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative">
+                                            <button onClick={() => deleteArchive(i)} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500">🗑️</button>
+                                            <p className="text-[10px] font-black text-slate-400 mb-2">{h.date}</p>
+                                            <div className="grid grid-cols-2 gap-y-2">
+                                                <div className="text-xs font-black">⚖️ {h.weight}kg</div>
+                                                <div className="text-xs font-black">📉 {h.bodyFat}%</div>
+                                                <div className="text-xs font-black text-emerald-600">🔥 -{h.totalBurn}kcal</div>
+                                                <div className="text-xs font-black text-blue-600">💧 {h.water}L</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
 
-                        {/* 時間軸戰報紀錄 */}
-                        <div className="space-y-5 pb-10">
-                            <h3 className="font-black text-slate-900 uppercase italic tracking-tighter text-lg px-2 border-l-4 border-slate-900 ml-2 pl-3">Daily Briefing</h3>
-                            <div className="space-y-4">
-                                {logs.slice().reverse().map((log) => (
-                                    <div key={log.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm hover:shadow-md transition-shadow border border-slate-100 relative group">
-                                        {editingId === log.id ? (
-                                            /* --- 編輯模式 UI --- */
-                                            <div className="space-y-4">
-                                                <div className="flex items-center space-x-2">
-                                                    <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.name} onChange={(e) => setEditValue({ ...editValue, name: e.target.value })} />
-                                                    <input type="text" className="w-24 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none text-center" value={editValue.time} onChange={(e) => setEditValue({ ...editValue, time: e.target.value })} />
-                                                </div>
-                                                
-                                                {log.type === 'diet' && (
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        {['protein', 'veg', 'carb', 'cheat'].map(c => (
-                                                            <button key={c} onClick={() => setEditValue({ ...editValue, category: c })} className={`py-2 rounded-lg text-[9px] font-black uppercase border ${editValue.category === c ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                                                {c === 'protein' ? '肉蛋' : c === 'veg' ? '蔬菜' : c === 'carb' ? '澱粉' : '邪惡'}
-                                                            </button>
-                                                        ))}
+                        {/* 即時列表 (History 分頁時不顯示) */}
+                        {activeTab !== 'history' && (
+                            <div className="space-y-5 pb-10">
+                                <div className="flex justify-between items-center px-2">
+                                    <h3 className="font-black text-slate-900 uppercase italic tracking-tighter text-lg border-l-4 border-slate-900 pl-3">Daily Briefing</h3>
+                                    {logs.length > 0 && (
+                                        <button onClick={archiveAndReset} className="text-[10px] font-bold text-rose-500 bg-rose-50 px-3 py-1.5 rounded-xl uppercase">Archive & Reset</button>
+                                    )}
+                                </div>
+                                <div className="space-y-4">
+                                    {logs.slice().reverse().map((log) => (
+                                        <div key={log.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 relative group">
+                                            {editingId === log.id ? (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center space-x-2">
+                                                        <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.name} onChange={(e) => setEditValue({ ...editValue, name: e.target.value })} />
+                                                        <input type="text" className="w-24 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-center" value={editValue.time} onChange={(e) => setEditValue({ ...editValue, time: e.target.value })} />
                                                     </div>
-                                                )}
-                                                
-                                                {log.type === 'exercise' && (
-                                                    <div className="flex flex-col space-y-1">
-                                                        <label className="text-[9px] font-black text-slate-400 ml-1">DURATION (MINS)</label>
-                                                        <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.duration} onChange={(e) => setEditValue({ ...editValue, duration: parseInt(e.target.value) || 0 })} />
-                                                    </div>
-                                                )}
-                                                
-                                                <div className="flex space-x-3 pt-2">
-                                                    <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black flex justify-center items-center shadow-lg shadow-emerald-100 active:scale-95 transition-all">
-                                                        <Icon name="check" className="w-4 h-4 mr-1" /> SAVE
-                                                    </button>
-                                                    <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black flex justify-center items-center active:scale-95 transition-all">
-                                                        <Icon name="x" className="w-4 h-4 mr-1" /> CANCEL
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            /* --- 顯示模式 UI --- */
-                                            <>
-                                                {/* 懸浮編輯/刪除按鈕 */}
-                                                <div className="absolute top-4 right-5 flex space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
-                                                    <button onClick={() => startEdit(log)} className="p-2.5 bg-slate-50 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
-                                                        <Icon name="edit-2" className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button onClick={() => deleteLog(log.id)} className="p-2.5 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
-                                                        <Icon name="trash-2" className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-
-                                                <div className="flex items-center mb-4 pr-16">
-                                                    <div className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center mr-4 shadow-sm ${log.type === 'exercise' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'}`}>
-                                                        <Icon name={log.type === 'exercise' ? 'flame' : 'utensils'} className="w-6 h-6" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-black text-slate-900 text-[15px]">{log.name}</p>
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{log.time}</p>
+                                                    <div className="flex space-x-3">
+                                                        <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black">SAVE</button>
+                                                        <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black">CANCEL</button>
                                                     </div>
                                                 </div>
-
-                                                {log.type === 'diet' ? (
-                                                    <div className="space-y-3">
-                                                        <div className={`inline-block px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border-2 ${log.impact === 'high' ? 'bg-rose-50 border-rose-100 text-rose-500' : log.impact === 'medium' ? 'bg-amber-50 border-amber-100 text-amber-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'}`}>
-                                                            {log.rating}
+                                            ) : (
+                                                <>
+                                                    <div className="absolute top-4 right-5 flex space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => startEdit(log)} className="text-slate-400 hover:text-blue-500">✏️</button>
+                                                        <button onClick={() => deleteLog(log.id)} className="text-slate-400 hover:text-rose-500">🗑️</button>
+                                                    </div>
+                                                    <div className="flex items-center mb-4 pr-16">
+                                                        <div className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center mr-4 text-2xl ${log.type === 'exercise' ? 'bg-emerald-50' : 'bg-slate-50'}`}>{log.type === 'exercise' ? '🔥' : '🍽️'}</div>
+                                                        <div><p className="font-black text-slate-900 text-[15px]">{log.name}</p><p className="text-[10px] font-black text-slate-400 uppercase mt-0.5">{log.time}</p></div>
+                                                    </div>
+                                                    {log.type === 'diet' ? (
+                                                        <div className="space-y-3">
+                                                            <div className={`inline-block px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border-2 ${log.impact === 'high' ? 'bg-rose-50 border-rose-100 text-rose-500' : log.impact === 'medium' ? 'bg-amber-50 border-amber-100 text-amber-500' : 'bg-emerald-50 border-emerald-100 text-emerald-500'}`}>{log.rating}</div>
+                                                            <div className="bg-slate-50 p-4 rounded-2xl text-[11px] font-bold text-slate-600 border-l-4 border-slate-200">軍師：「{log.feedback}」</div>
                                                         </div>
-                                                        <div className="bg-slate-50/80 p-4 rounded-2xl text-[11px] font-bold text-slate-600 border-l-4 border-slate-200 leading-relaxed">
-                                                            軍師：「{log.feedback}」
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-between mt-2">
-                                                        <span className="font-black text-sm italic text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl">
-                                                            -{log.calories} KCAL
-                                                        </span>
-                                                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl">
-                                                            {log.duration} MINS
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
+                                                    ) : (
+                                                        <div className="flex items-center justify-between mt-2"><span className="font-black text-sm italic text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl">-{log.calories} KCAL</span><span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl">{log.duration} MINS</span></div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* 懸浮飲水按鈕 */}
-                    <button 
-                        onClick={() => setStats({...stats, water: +(stats.water + 0.25).toFixed(2)})} 
-                        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-500 text-white rounded-[2rem] shadow-xl shadow-blue-200 flex flex-col items-center justify-center border-4 border-white z-50 active:scale-90 transition-transform duration-200"
-                    >
-                        <Icon name="droplets" className="w-6 h-6 mb-0.5" />
-                        <span className="text-[9px] font-black">{stats.water}L</span>
+                    <button onClick={() => setStats({...stats, water: +(stats.water + 0.25).toFixed(2)})} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-500 text-white rounded-[2rem] shadow-xl flex flex-col items-center justify-center border-4 border-white z-50">
+                        <span className="text-xl">💧</span><span className="text-[9px] font-black">{stats.water}L</span>
                     </button>
                 </div>
             );
