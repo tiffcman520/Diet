@@ -17,39 +17,33 @@
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .radar-scan { animation: scan 2s linear infinite; }
+        @keyframes scan { 0% { transform: scale(0.95); opacity: 1; } 100% { transform: scale(1.05); opacity: 0.5; } }
     </style>
 </head>
 <body class="bg-[#F8FAFC]">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         function App() {
             const [activeTab, setActiveTab] = useState('diet');
             const [editingId, setEditingId] = useState(null);
             
             // --- 狀態管理 (LocalStorage) ---
-            
-            // 1. 每日即時紀錄
             const [logs, setLogs] = useState(() => {
                 const saved = localStorage.getItem('diet_logs');
                 return saved ? JSON.parse(saved) : [];
             });
 
-            // 2. 當前身體狀態
             const [stats, setStats] = useState(() => {
                 const saved = localStorage.getItem('diet_stats');
-                return saved ? JSON.parse(saved) : {
-                    weight: 75.0,
-                    bodyFat: 28.5,
-                    targetWeight: 60.0,
-                    targetFat: 20.0,
-                    water: 0, 
-                };
+                return saved ? JSON.parse(saved) : { weight: 75.0, bodyFat: 28.5, targetWeight: 60.0, targetFat: 20.0, water: 0 };
             });
 
-            // 3. 歷史存檔 (新增項目)
             const [history, setHistory] = useState(() => {
                 const saved = localStorage.getItem('diet_history');
                 return saved ? JSON.parse(saved) : [];
@@ -65,141 +59,141 @@
             const [foodName, setFoodName] = useState('');
             const [exName, setExName] = useState('羽毛球');
             const [exDuration, setExDuration] = useState(60);
+            const [customCalories, setCustomCalories] = useState(''); // 新增：自定義卡路里
             const [newWeight, setNewWeight] = useState(stats.weight);
             const [newFat, setNewFat] = useState(stats.bodyFat);
             const [editValue, setEditValue] = useState({});
+            
+            // SOS 軍師狀態
+            const [sosResult, setSosResult] = useState('');
+            const [customChoice, setCustomChoice] = useState('');
 
             useEffect(() => { analyzeSituation(); }, [logs, stats.weight, stats.bodyFat]);
 
-            // --- 核心邏輯 ---
-
-            const getFoodAnalysis = (name) => {
+            // --- 核心邏輯：AI 智能食物分類 ---
+            const categorizeFood = (name) => {
                 const n = name.toLowerCase();
-                let cat = 'carb'; // 預設安全判定為澱粉
-                let rating = '';
-                let feedback = '';
-                let impact = 'medium';
-
-                // 自動智能分析成分 (特徵辨識強化版)
-                const hasProtein = ['蛋', '雞', '牛', '豬', '魚', '蝦', '豆腐', '豆漿', '肉', '奶', '三文魚', '排', '扒', '海鮮'].some(k => n.includes(k));
-                const hasCarb = ['飯', '麵', '粉', '包', '餅', '薯', '粟米', '河粉', '烏冬', '皮', '粥', '麥片', '多士'].some(k => n.includes(k));
-                const hasVeg = ['菜', '菇', '瓜', '菠菜', '番茄', '洋蔥', '沙律', '豆', '果', '蘋果', '蕉', '橙', '西蘭花'].some(k => n.includes(k));
-                const hasFatCheat = ['炸', '腩', '芝士', '糖', '甜', '腸', '響鈴', '醬', '糕', '雪糕', '酒', '朱古力', '汽水', '可樂', '奶茶', '薯片', '牛角包'].some(k => n.includes(k));
-                const hasGoodFat = ['牛油果', '核桃', '堅果', '三文魚', '杏仁', '腰果'].some(k => n.includes(k));
-
-                // 全自動智能邏輯判斷
-                if (hasFatCheat) {
-                    cat = 'cheat'; rating = '熱量陷阱'; impact = 'high';
-                    feedback = '系統偵測到高脂/高糖成分！呢啲會迅速轉化為頑固脂肪，下一餐必須大幅扣減配額。';
-                } else if (hasCarb && !hasProtein && !hasVeg) {
-                    cat = 'carb'; rating = '純碳水炸彈'; impact = 'high';
-                    feedback = '缺乏蛋白質同纖維緩衝，會令血糖急升急跌！建議加返隻蛋或者少少菜減緩吸收。';
-                } else if (hasCarb && (hasProtein || hasVeg)) {
-                    cat = 'carb'; rating = '複合能量'; impact = 'medium';
-                    feedback = '有蛋白質/纖維幫手，呢份澱粉吸收得會比較平穩，適合做運動前嘅燃料。';
-                } else if (hasProtein && hasVeg) {
-                    cat = 'protein'; rating = '完美修復餐'; impact = 'low';
-                    feedback = '高蛋白加高纖維！飽腹感強兼且幫助肌肉修復，軍師極度推薦呢種黃金配搭！';
-                } else if (hasGoodFat) {
-                    cat = 'protein'; rating = '優質油脂'; impact = 'medium';
-                    feedback = '優質脂肪有助抗發炎同提供持久飽足感，但始終熱量唔低，請注意總份量。';
-                } else if (hasProtein) {
-                    cat = 'protein'; rating = '純粹肌肉燃料'; impact = 'low';
-                    feedback = '直接修補肌肉嘅優質建材。如果加多啲深綠色蔬菜一齊食，排毒效果會更好。';
-                } else if (hasVeg) {
-                    cat = 'veg'; rating = '去水排毒神器'; impact = 'low';
-                    feedback = '豐富纖維同鉀質，幫你排走多餘水分同鈉，係火鍋或者大餐後嘅急救救星。';
-                } else {
-                    cat = 'carb'; rating = '未知軍糧'; impact = 'medium'; 
-                    feedback = '軍師無法準確識別此食物，為安全起見預設歸類為澱粉，請留意攝取份量。';
-                }
-
-                return { category: cat, rating, feedback, impact };
+                // 關鍵字字典
+                const cheatKeys = ['炸', '糖', '甜', '糕', '餅', '朱古力', '雪糕', '麥當勞', 'kfc', '零食', '汽水', '皮', '響鈴', '腸', '薯'];
+                const carbKeys = ['飯', '麵', '河粉', '米線', '包', '粥', '粉', '烏冬', '麥片', '壽司'];
+                const vegKeys = ['菜', '菇', '瓜', '沙律', '果', '番茄', '西蘭花', '菠菜'];
+                
+                if (cheatKeys.some(k => n.includes(k))) return 'cheat';
+                if (carbKeys.some(k => n.includes(k))) return 'carb';
+                if (vegKeys.some(k => n.includes(k))) return 'veg';
+                // 預設為蛋白質 (包含雞、豬、牛、魚、蛋、豆腐、海鮮等)
+                return 'protein'; 
             };
 
+            const getFoodAnalysis = (name) => {
+                const cat = categorizeFood(name);
+                const n = name.toLowerCase();
+                
+                if (cat === 'cheat') return { category: cat, rating: '熱量刺客', feedback: '偵測到高油/高糖成分！呢次食完，下一餐要扣返澱粉配額。', impact: 'high' };
+                if (cat === 'veg') return { category: cat, rating: '去水神器', feedback: '高纖高鉀，幫你排走多餘鈉質，填飽個胃嘅好隊友！', impact: 'low' };
+                if (cat === 'carb') {
+                    if(n.includes('飯糰') || n.includes('麥片')) return { category: cat, rating: '戰前充能', feedback: '乾淨澱粉，啱晒打波/運動前補充體力。', impact: 'medium' };
+                    return { category: cat, rating: '澱粉攝取', feedback: '已吸收澱粉！注意今日剩餘配額，夜晚盡量避開。', impact: 'high' };
+                }
+                // Protein default
+                if(n.includes('牛油果') || n.includes('三文魚')) return { category: cat, rating: '優質油脂', feedback: '好嘅脂肪同蛋白質，有助抗發炎同飽肚。', impact: 'medium' };
+                return { category: cat, rating: '肌肉燃料', feedback: '優質蛋白質，修補肌肉必備，對提升代謝極好！', impact: 'low' };
+            };
+
+            // 軍師戰術推演 (新增 自己煮 vs 外賣 建議)
             const analyzeSituation = () => {
                 const carbCount = logs.filter(l => l.type === 'diet' && (l.category === 'carb' || l.category === 'cheat')).length;
                 const totalBurn = logs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
                 
-                const now = new Date();
-                const currentHour = now.getHours();
-                
-                // 尋找最後一次進食與運動時間
-                const lastDietLog = logs.slice().reverse().find(l => l.type === 'diet');
-                const lastExerciseLog = logs.slice().reverse().find(l => l.type === 'exercise');
-                
-                let timeAdvice = "系統正收集數據...";
-                let nextMealTime = "視乎狀況";
-                let tacticalAction = "等待指令";
-                let status = "normal";
-                let title = "🛡️ 戰術推演中";
+                let advice = { title: "軍師待命中", content: "數據同步中...", nextMeal: "視乎狀況", home: "保持清淡", takeout: "注意油鹽", status: "normal" };
 
-                // 1. 根據「真實時間」與「消化週期」判定
-                if (currentHour >= 21 || currentHour <= 4) {
-                    title = "🌙 夜間代謝減慢";
-                    timeAdvice = "依家夜深，身體準備休息，消化能力下降。";
-                    nextMealTime = "明早起床後";
-                    tacticalAction = "全面禁食！真係餓到瞓唔著最多飲半杯無糖豆漿或蛋白。";
-                    status = "warning";
-                } else if (lastExerciseLog && (currentHour - parseInt(lastExerciseLog.time.split(':')[0])) <= 2 && (currentHour - parseInt(lastExerciseLog.time.split(':')[0])) >= 0) {
-                    title = "🏸 戰後黃金吸收期";
-                    timeAdvice = "剛完成高強度運動，肌肉細胞急需養分修復。";
-                    nextMealTime = "現在立即";
-                    tacticalAction = "極速補充蛋白質 (如雞胸、蛋) 及微量碳水，切忌捱餓！";
-                    status = "success";
-                } else if (lastDietLog) {
-                    const lastLogHour = parseInt(lastDietLog.time.split(':')[0]);
-                    const hoursSinceLastMeal = currentHour - lastLogHour;
-                    
-                    if (hoursSinceLastMeal < 3 && hoursSinceLastMeal >= 0) {
-                        title = "⏳ 消化推進中";
-                        timeAdvice = `距離上一餐只係過咗大約 ${hoursSinceLastMeal} 個鐘，食物仲消化緊。`;
-                        nextMealTime = `大約 ${lastLogHour + 4}:00 後`;
-                        tacticalAction = "如果口痕，請飲清水或黑咖啡，絕對避免攝取額外熱量。";
-                    } else if (hoursSinceLastMeal >= 4) {
-                        title = "🍽️ 能量谷底";
-                        timeAdvice = `距離上一餐已經超過 4 小時，血糖開始下降，係補充能量嘅好時機。`;
-                        nextMealTime = "現在適合進食";
-                        tacticalAction = "可以開始進食正餐，請依照軍師的成分配額分配。";
-                    } else {
-                        title = "🛡️ 穩定減脂期";
-                        timeAdvice = "目前處於平穩狀態，請維持規律作息。";
-                        nextMealTime = "感到7分餓時";
-                        tacticalAction = "保持水分充足，準備下一場戰役。";
-                    }
+                if (totalBurn >= 900) {
+                    advice = { 
+                        title: "🔥 戰神級燃脂狀態！", 
+                        content: `今日燒咗 ${totalBurn} kcal，身體急需修復。可以獎勵自己食好少少，但主攻蛋白質。`, 
+                        nextMeal: "睡前 2 小時前", 
+                        home: "煎雞胸/牛柳 + 炒菜 + 半碗飯 (補充醣原)", 
+                        takeout: "壽司 (刺身為主、茶碗蒸) 或 燒肉 (走醬汁)", 
+                        status: "success" 
+                    };
+                } else if (carbCount >= 2) {
+                    advice = { 
+                        title: "⚠️ 澱粉配額已達警戒線！", 
+                        content: `今日已進食 ${carbCount} 次澱粉/高卡食物。下一餐必須啟動「零澱粉禁令」。`, 
+                        nextMeal: "今晚 8:00 PM 前", 
+                        home: "清雞湯蔬菜大雜燴煲 + 一磚硬豆腐 / 水煮蛋", 
+                        takeout: "譚仔/三哥 (清湯/番茄，轉菜底，配雞肉/牛排)", 
+                        status: "warning" 
+                    };
                 } else {
-                    title = "🌅 晨間啟動";
-                    timeAdvice = "今日仲未有進食紀錄，身體需要燃料啟動代謝。";
-                    nextMealTime = "隨時可以進食";
-                    tacticalAction = "建議以高蛋白+好脂肪嘅早餐開始 (如：雞蛋+牛油果)。";
+                    advice = { 
+                        title: "🛡️ 戰線平穩推進中", 
+                        content: "今日節奏良好，未有超標風險。繼續維持高蛋白、多蔬菜嘅穩健打法。", 
+                        nextMeal: "正常時間進食", 
+                        home: "蒸水蛋 / 煎魚 + 蒜蓉炒油麥菜 + 半碗飯", 
+                        takeout: "燒味檔 (白切雞/瘦叉燒，去皮少飯，走薑蔥)", 
+                        status: "normal" 
+                    };
                 }
-
-                // 2. 疊加「成分配額」判定 (高優先級覆蓋)
-                if (carbCount >= 3 && currentHour < 21) {
-                    title = "⚠️ 澱粉配額紅區警戒！";
-                    timeAdvice += ` 你今日已經食咗 ${carbCount} 次高碳水/邪惡食物。`;
-                    tacticalAction = "下一餐必須執行「絕對零澱粉禁令」，只准食綠色蔬菜同白肉！";
-                    status = "warning";
-                } else if (totalBurn >= 800 && currentHour < 21 && status !== "success") {
-                    title = "🔥 戰神級能量消耗！";
-                    timeAdvice += ` 今日消耗巨大 (-${totalBurn}kcal)。`;
-                    tacticalAction = "下一餐可略微增加優質蛋白質份量，獎勵辛勞嘅肌肉。";
-                    status = "success";
-                }
-
-                setAdvisorMessage({
-                    title: title,
-                    content: timeAdvice,
-                    nextMeal: nextMealTime,
-                    action: tacticalAction,
-                    status: status
-                });
+                setAdvisorMessage(advice);
             };
 
-            const calculateCalories = (name, duration) => {
+            // 自動計算卡路里
+            const calcAutoCalories = (name, duration) => {
                 const metValues = { '羽毛球': 7.2, '急步行': 4.5, '跑步': 9.8, '健身': 6.0 };
                 const met = metValues[name] || 5.0;
                 return Math.round(met * stats.weight * (duration / 60) * 1.2);
+            };
+
+            // 監聽運動時長變化，自動更新 placeholder
+            const autoCalValue = calcAutoCalories(exName, exDuration || 0);
+
+            // --- SOS 軍師邏輯 (新增定位功能) ---
+            const getSOSAdvice = (type) => {
+                const advices = {
+                    main: ["🛑 澱粉超標：【清雞湯蔬菜煲 + 一磚豆腐】", "✅ 正常發揮：【魚肉湯米粉】(少粉，走湯)", "✅ 戰術餐單：【雞髀肉沙律/Burrito Bowl】"],
+                    snack: ["🌰 頂肚首選：【原味核桃 5-7 粒】", "🥚 飽腹神器：【茶葉蛋 1 隻 (去黃)】", "🥛 解渴又飽：【無糖豆漿 1 盒】"],
+                    workout: ["🏸 戰前充能：【三文魚三角飯糰】", "💪 戰後修復：【無糖豆漿 + 即食雞胸】"]
+                };
+                const pool = advices[type];
+                setSosResult(pool[Math.floor(Math.random() * pool.length)]);
+            };
+
+            const locateAndSuggest = () => {
+                setSosResult("📡 雷達掃描地形中...");
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            try {
+                                // 嘗試反向地理編碼獲取區域名稱 (使用免費 OSM API)
+                                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                                const data = await res.json();
+                                const area = data.address.suburb || data.address.city_district || data.address.neighbourhood || "附近";
+                                setSosResult(`📍 軍師已鎖定你位於【${area}】！\n\n🛡️ 附近外賣/堂食安全區：\n1️⃣ 譚仔/三哥：清湯轉菜底，配雞肉/墨丸。\n2️⃣ 壽司店：主攻刺身、茶碗蒸，最多2件飯。\n3️⃣ 燒味檔：白切雞/瘦叉，去皮少飯走色。\n4️⃣ Subway：全麥包燒雞胸，走芝士。`);
+                            } catch (e) {
+                                // 失敗則使用通用香港建議
+                                setSosResult(`📍 軍師定位成功！\n\n🛡️ 附近健康搵食建議：\n1️⃣ 譚仔/三哥：清湯/番茄湯，轉菜底。\n2️⃣ 壽司店：主攻刺身、茶碗蒸。\n3️⃣ 兩餸飯：蒸肉餅/蒸水蛋/炒菜，少飯。`);
+                            }
+                        },
+                        (error) => {
+                            setSosResult("⚠️ 軍師雷達被干擾 (未能獲取定位)。\n\n無盲點建議：直接行去最近嘅「茶餐廳」叫蕃茄牛肉通粉，或者「米線陣」轉菜底！");
+                        }
+                    );
+                } else {
+                    setSosResult("⚠️ 設備不支援定位功能。");
+                }
+            };
+
+            const handleAIBoard = (e) => {
+                e.preventDefault();
+                if(!customChoice) return;
+                const options = customChoice.split(/定係|定|or|\/| /).filter(o => o.trim() !== '');
+                if(options.length < 2) { setSosResult("⚠️ 請輸入最少兩個選項！例：【譚仔 定 麥當勞】"); return; }
+                const picked = options[Math.floor(Math.random() * options.length)].trim();
+                setSosResult(`🗡️ 軍師果斷下令：今餐食「${picked}」！唔好再猶豫！`);
+                setCustomChoice('');
             };
 
             // --- 事件處理 ---
@@ -207,28 +201,17 @@
                 e.preventDefault();
                 if (!foodName) return;
                 const analysis = getFoodAnalysis(foodName);
-                setLogs([...logs, {
-                    id: Date.now(),
-                    type: 'diet',
-                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    name: foodName,
-                    ...analysis
-                }]);
+                setLogs([...logs, { id: Date.now(), type: 'diet', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), name: foodName, ...analysis }]);
                 setFoodName('');
             };
 
             const handleAddExercise = (e) => {
                 e.preventDefault();
                 if (!exDuration) return;
-                setLogs([...logs, {
-                    id: Date.now(),
-                    type: 'exercise',
-                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    name: exName,
-                    duration: parseInt(exDuration),
-                    calories: calculateCalories(exName, exDuration)
-                }]);
+                const finalCalories = customCalories !== '' ? parseInt(customCalories) : autoCalValue;
+                setLogs([...logs, { id: Date.now(), type: 'exercise', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), name: exName, duration: parseInt(exDuration), calories: finalCalories }]);
                 setExDuration(60);
+                setCustomCalories('');
             };
 
             const handleUpdateStats = (e) => {
@@ -237,21 +220,11 @@
                 setActiveTab('diet');
             };
 
-            // --- 重置與封存邏輯 ---
             const archiveAndReset = () => {
                 if(window.confirm("軍師確認：封存今日數據並重置紀錄？")) {
                     const totalBurn = logs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
                     const mealCount = logs.filter(l => l.type === 'diet').length;
-                    
-                    const archiveEntry = {
-                        date: new Date().toLocaleDateString(),
-                        weight: stats.weight,
-                        bodyFat: stats.bodyFat,
-                        totalBurn,
-                        mealCount,
-                        water: stats.water
-                    };
-
+                    const archiveEntry = { date: new Date().toLocaleDateString(), weight: stats.weight, bodyFat: stats.bodyFat, totalBurn, mealCount, water: stats.water };
                     setHistory([archiveEntry, ...history]);
                     setLogs([]);
                     setStats({...stats, water: 0});
@@ -259,21 +232,21 @@
             };
 
             const deleteArchive = (index) => {
-                if(window.confirm("確定要刪除這條歷史紀錄？")) {
-                    setHistory(history.filter((_, i) => i !== index));
-                }
+                if(window.confirm("確定要刪除這條歷史紀錄？")) setHistory(history.filter((_, i) => i !== index));
             };
 
+            // --- 編輯功能 ---
             const startEdit = (log) => { setEditingId(log.id); setEditValue({ ...log }); };
 
             const saveEdit = () => {
                 const updatedLogs = logs.map(log => {
                     if (log.id === editingId) {
                         if (log.type === 'diet') {
-                            const analysis = getFoodAnalysis(editValue.name);
-                            return { ...editValue, ...analysis };
+                            // 重新分析編輯後的名字
+                            return { ...editValue, ...getFoodAnalysis(editValue.name) };
                         } else {
-                            return { ...editValue, calories: calculateCalories(editValue.name, editValue.duration) };
+                            // 運動編輯：如果使用者沒有手動輸入卡路里，就不覆蓋
+                            return { ...editValue };
                         }
                     }
                     return log;
@@ -283,9 +256,7 @@
             };
 
             const deleteLog = (id) => {
-                if(window.confirm("軍師確認：是否刪除此筆戰報？")) {
-                    setLogs(logs.filter(log => log.id !== id));
-                }
+                if(window.confirm("軍師確認：是否刪除此筆戰報？")) setLogs(logs.filter(log => log.id !== id));
             };
 
             return (
@@ -294,79 +265,120 @@
                     <div className="bg-[#0F172A] text-white pt-10 pb-14 px-6 rounded-b-[2.5rem] shadow-2xl relative">
                         <div className="flex justify-between items-center mb-8 relative z-10">
                             <h1 className="text-xl font-black italic flex items-center uppercase tracking-tight">
-                                <div className="bg-emerald-500 p-1.5 rounded-lg mr-2 text-slate-900 text-lg leading-none">🛡️</div>
+                                <div className="bg-emerald-500 p-1.5 rounded-lg mr-2 text-slate-900 text-lg leading-none radar-scan">🛡️</div>
                                 Diet Commander
                             </h1>
-                            <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[11px] font-bold">
-                                DATA PERSISTED
-                            </div>
+                            <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[11px] font-bold">AI MODE</div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 relative z-10">
                             <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
                                 <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">⚖️ Weight</span>
-                                <div className="flex items-baseline">
-                                    <span className="text-4xl font-black tabular-nums">{stats.weight}</span>
-                                    <span className="text-xs ml-1 font-bold text-slate-400">KG</span>
-                                </div>
+                                <div className="flex items-baseline"><span className="text-4xl font-black tabular-nums">{stats.weight}</span><span className="text-xs ml-1 font-bold text-slate-400">KG</span></div>
                             </div>
                             <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[2rem] border border-white/10">
                                 <span className="text-[10px] uppercase font-black text-slate-400 flex items-center mb-2 tracking-wider">📉 Body Fat</span>
-                                <div className="flex items-baseline">
-                                    <span className="text-4xl font-black tabular-nums">{stats.bodyFat}</span>
-                                    <span className="text-xs ml-1 font-bold text-slate-400">%</span>
-                                </div>
+                                <div className="flex items-baseline"><span className="text-4xl font-black tabular-nums">{stats.bodyFat}</span><span className="text-xs ml-1 font-bold text-slate-400">%</span></div>
                             </div>
                         </div>
                     </div>
 
                     <div className="max-w-md mx-auto px-5 -mt-10 relative z-20">
-                        {/* 軍師卡片 */}
-                        <div className={`p-6 rounded-[2.5rem] shadow-xl mb-8 border-2 transition-all ${advisorMessage.status === 'warning' ? 'bg-amber-500 border-amber-400 text-white shadow-amber-200' : advisorMessage.status === 'success' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-200' : 'bg-slate-800 border-slate-700 text-white shadow-slate-300'}`}>
-                            <div className="flex items-center mb-4"><div className="bg-white/20 p-2 rounded-xl mr-3 text-lg leading-none">💡</div><h2 className="text-lg font-black italic">{advisorMessage.title}</h2></div>
-                            <p className="text-sm font-medium leading-relaxed mb-6 opacity-95">「{advisorMessage.content}」</p>
-                            <div className="space-y-3">
-                                <div className="bg-black/20 p-4 rounded-2xl flex items-center">
-                                    <span className="mr-3 opacity-80 text-lg">⏰</span>
-                                    <div><p className="text-[10px] font-black uppercase opacity-60">Next Meal</p><p className="text-sm font-black">{advisorMessage.nextMeal}</p></div>
-                                </div>
-                                <div className="bg-black/20 p-4 rounded-2xl flex items-start">
-                                    <span className="mr-3 mt-0.5 opacity-80 text-lg">🎯</span>
-                                    <div><p className="text-[10px] font-black uppercase opacity-60">Tactical Action</p><p className="text-sm font-bold">{advisorMessage.action}</p></div>
+                        {/* 軍師卡片 (新增自己煮/外賣建議) */}
+                        {activeTab !== 'sos' && (
+                            <div className={`p-6 rounded-[2.5rem] shadow-xl mb-8 border-2 transition-all ${advisorMessage.status === 'warning' ? 'bg-amber-500 border-amber-400 text-white' : advisorMessage.status === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-white'}`}>
+                                <div className="flex items-center mb-4"><div className="bg-white/20 p-2 rounded-xl mr-3 text-lg leading-none">💡</div><h2 className="text-lg font-black italic">{advisorMessage.title}</h2></div>
+                                <p className="text-sm font-medium leading-relaxed mb-6 opacity-95">「{advisorMessage.content}」</p>
+                                <div className="space-y-2">
+                                    <div className="bg-black/20 p-3.5 rounded-2xl flex items-start">
+                                        <span className="mr-3 mt-0.5 opacity-80 text-base">🏡</span>
+                                        <div><p className="text-[10px] font-black uppercase opacity-60">自己煮建議</p><p className="text-xs font-bold leading-snug mt-0.5">{advisorMessage.home}</p></div>
+                                    </div>
+                                    <div className="bg-black/20 p-3.5 rounded-2xl flex items-start">
+                                        <span className="mr-3 mt-0.5 opacity-80 text-base">🥡</span>
+                                        <div><p className="text-[10px] font-black uppercase opacity-60">外賣/堂食建議</p><p className="text-xs font-bold leading-snug mt-0.5">{advisorMessage.takeout}</p></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* 分頁控制 */}
                         <div className="bg-slate-200/60 backdrop-blur p-1.5 rounded-2xl flex mb-8 overflow-x-auto no-scrollbar">
-                            {['diet', 'exercise', 'stats', 'history'].map(tab => (
-                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[70px] py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white shadow-md text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    {tab === 'diet' ? 'Meal' : tab === 'exercise' ? 'Activity' : tab === 'stats' ? 'Vitals' : 'History'}
+                            {['diet', 'exercise', 'stats', 'history', 'sos'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[65px] py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white shadow-md text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    {tab === 'diet' ? 'Meal' : tab === 'exercise' ? 'Activity' : tab === 'stats' ? 'Vitals' : tab === 'history' ? 'History' : '🆘 SOS'}
                                 </button>
                             ))}
                         </div>
 
                         {/* 分頁內容 */}
                         <div className="bg-white p-7 rounded-[3rem] shadow-lg shadow-slate-100 mb-10 border border-slate-50">
+                            
+                            {/* --- SOS 分頁 --- */}
+                            {activeTab === 'sos' && (
+                                <div className="space-y-6">
+                                    <h3 className="font-black text-xl italic uppercase text-slate-800 text-center mb-2">🆘 軍師錦囊</h3>
+                                    <p className="text-xs text-center text-slate-500 font-bold mb-6">選擇困難症發作？等軍師為你指點迷津！</p>
+
+                                    {sosResult && (
+                                        <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-lg border-2 border-slate-700 whitespace-pre-line">
+                                            <p className="text-sm font-bold leading-relaxed">{sosResult}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
+                                        <button onClick={locateAndSuggest} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-black py-4 rounded-2xl transition-all flex items-center justify-center">
+                                            📍 啟動雷達搵食 (定位推薦)
+                                        </button>
+                                        <button onClick={() => getSOSAdvice('main')} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-black py-4 rounded-2xl transition-all flex items-center justify-center">
+                                            🍽️ 正餐唔知食咩好！
+                                        </button>
+                                        <button onClick={() => getSOSAdvice('workout')} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-black py-4 rounded-2xl transition-all flex items-center justify-center">
+                                            🏸 打波前後點補給？
+                                        </button>
+                                    </div>
+
+                                    <div className="my-6 border-b-2 border-dashed border-slate-200"></div>
+
+                                    <form onSubmit={handleAIBoard} className="space-y-4">
+                                        <h4 className="font-black text-sm text-slate-800">⚔️ 終極二選一決斷器</h4>
+                                        <input type="text" placeholder="例：譚仔 定 壽司" className="w-full px-5 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-blue-200" value={customChoice} onChange={(e) => setCustomChoice(e.target.value)} />
+                                        <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 active:scale-95 transition-all text-xs tracking-widest">幫我決定！</button>
+                                    </form>
+                                </div>
+                            )}
+
+                            {/* --- 飲食紀錄 (AI 自動分類) --- */}
                             {activeTab === 'diet' && (
                                 <form onSubmit={handleAddFood} className="space-y-5">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">New Supply</h3>
-                                    <input type="text" placeholder="食咗啲乜？ (例如: 雞胸肉/蘋果)" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
-                                    <div className="bg-blue-50 p-4 rounded-2xl text-xs font-bold text-blue-600 flex items-center">
-                                        <span className="text-lg mr-2">🤖</span> 軍師將根據食物名稱自動為您分析成分及評價。
-                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-400">系統已升級：直接輸入食物，軍師會 AI 自動幫你分類！</p>
+                                    <input type="text" placeholder="例如：越南河粉 / 水煮蛋 / 麥當勞" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-slate-200" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
                                     <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Confirm Supply</button>
                                 </form>
                             )}
 
+                            {/* --- 運動紀錄 (可編輯卡路里) --- */}
                             {activeTab === 'exercise' && (
                                 <form onSubmit={handleAddExercise} className="space-y-5">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">Combat Output</h3>
                                     <select className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={exName} onChange={(e) => setExName(e.target.value)}>
                                         <option value="羽毛球">🏸 羽毛球</option><option value="急步行">🚶‍♂️ 急步行</option><option value="跑步">🏃‍♂️ 跑步</option><option value="健身">🏋️‍♂️ 健身</option>
                                     </select>
-                                    <div className="flex items-center bg-slate-100 rounded-2xl px-6"><span className="text-slate-400 mr-4 text-lg">⏰</span><input type="number" className="bg-transparent py-4 w-full outline-none text-sm font-bold" value={exDuration} onChange={(e) => setExDuration(e.target.value)} /><span className="text-slate-400 font-black text-[10px]">MINS</span></div>
-                                    <button className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Log Combat</button>
+                                    <div className="flex space-x-3">
+                                        <div className="flex-1 flex items-center bg-slate-100 rounded-2xl px-4">
+                                            <span className="text-slate-400 mr-2 text-base">⏰</span>
+                                            <input type="number" className="bg-transparent py-4 w-full outline-none text-sm font-bold" value={exDuration} onChange={(e) => setExDuration(e.target.value)} />
+                                            <span className="text-slate-400 font-black text-[10px]">MIN</span>
+                                        </div>
+                                        <div className="flex-1 flex items-center bg-emerald-50 rounded-2xl px-4 border border-emerald-100">
+                                            <span className="text-emerald-500 mr-2 text-base">🔥</span>
+                                            <input type="number" placeholder={autoCalValue} className="bg-transparent py-4 w-full outline-none text-sm font-bold text-emerald-700 placeholder:text-emerald-300" value={customCalories} onChange={(e) => setCustomCalories(e.target.value)} />
+                                            <span className="text-emerald-600 font-black text-[10px]">KCAL</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-slate-400 text-right mt-1">如使用手錶/App紀錄，可直接輸入真實卡路里覆蓋估算值。</p>
+                                    <button className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs shadow-lg shadow-emerald-200">Log Combat</button>
                                 </form>
                             )}
 
@@ -400,8 +412,8 @@
                             )}
                         </div>
 
-                        {/* 即時列表 (History 分頁時不顯示) */}
-                        {activeTab !== 'history' && (
+                        {/* 即時列表 (History / SOS 分頁時不顯示) */}
+                        {(activeTab !== 'history' && activeTab !== 'sos') && (
                             <div className="space-y-5 pb-10">
                                 <div className="flex justify-between items-center px-2">
                                     <h3 className="font-black text-slate-900 uppercase italic tracking-tighter text-lg border-l-4 border-slate-900 pl-3">Daily Briefing</h3>
@@ -420,19 +432,21 @@
                                                     </div>
                                                     
                                                     {log.type === 'exercise' && (
-                                                        <div className="flex flex-col space-y-1">
-                                                            <label className="text-[9px] font-black text-slate-400 ml-1">DURATION (MINS)</label>
-                                                            <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.duration} onChange={(e) => setEditValue({ ...editValue, duration: parseInt(e.target.value) || 0 })} />
+                                                        <div className="flex space-x-2">
+                                                            <div className="flex-1">
+                                                                <label className="text-[9px] font-black text-slate-400 ml-1">MINS</label>
+                                                                <input type="number" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.duration} onChange={(e) => setEditValue({ ...editValue, duration: parseInt(e.target.value) || 0 })} />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <label className="text-[9px] font-black text-slate-400 ml-1">KCAL</label>
+                                                                <input type="number" className="w-full px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-sm font-bold text-emerald-700 outline-none" value={editValue.calories} onChange={(e) => setEditValue({ ...editValue, calories: parseInt(e.target.value) || 0 })} />
+                                                            </div>
                                                         </div>
                                                     )}
                                                     
-                                                    <div className="flex space-x-3 pt-2">
-                                                        <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black flex justify-center items-center shadow-lg shadow-emerald-100 active:scale-95 transition-all">
-                                                            ✅ SAVE
-                                                        </button>
-                                                        <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black flex justify-center items-center active:scale-95 transition-all">
-                                                            ❌ CANCEL
-                                                        </button>
+                                                    <div className="flex space-x-3">
+                                                        <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black">SAVE</button>
+                                                        <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black">CANCEL</button>
                                                     </div>
                                                 </div>
                                             ) : (
