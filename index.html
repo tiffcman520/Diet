@@ -63,7 +63,6 @@
             
             // 表單狀態
             const [foodName, setFoodName] = useState('');
-            const [foodCat, setFoodCat] = useState('protein');
             const [exName, setExName] = useState('羽毛球');
             const [exDuration, setExDuration] = useState(60);
             const [newWeight, setNewWeight] = useState(stats.weight);
@@ -74,47 +73,127 @@
 
             // --- 核心邏輯 ---
 
-            const getFoodAnalysis = (name, cat) => {
+            const getFoodAnalysis = (name) => {
                 const n = name.toLowerCase();
-                if (cat === 'cheat') return { rating: '熱量陷阱', feedback: '油/糖太高，會阻礙燃脂。下次考慮換成堅果。', impact: 'high' };
-                if (n.includes('蛋') || n.includes('雞') || n.includes('肉') || n.includes('豆腐') || cat === 'protein') return { rating: '肌肉燃料', feedback: '優質蛋白質，修補肌肉必備，提升代謝。', impact: 'low' };
-                if (n.includes('菜') || n.includes('菇') || n.includes('瓜') || cat === 'veg') return { rating: '去水神器', feedback: '高纖高鉀，幫你排走多餘鈉質。', impact: 'low' };
-                if (cat === 'carb') return { rating: '能量補充', feedback: '澱粉份量要注意，晚上絕對禁澱粉。', impact: 'high' };
-                return { rating: '正常攝取', feedback: '中規中矩，記得注意份量。', impact: 'medium' };
+                let cat = 'carb'; // 預設安全判定為澱粉
+                let rating = '';
+                let feedback = '';
+                let impact = 'medium';
+
+                // 自動智能分析成分 (特徵辨識強化版)
+                const hasProtein = ['蛋', '雞', '牛', '豬', '魚', '蝦', '豆腐', '豆漿', '肉', '奶', '三文魚', '排', '扒', '海鮮'].some(k => n.includes(k));
+                const hasCarb = ['飯', '麵', '粉', '包', '餅', '薯', '粟米', '河粉', '烏冬', '皮', '粥', '麥片', '多士'].some(k => n.includes(k));
+                const hasVeg = ['菜', '菇', '瓜', '菠菜', '番茄', '洋蔥', '沙律', '豆', '果', '蘋果', '蕉', '橙', '西蘭花'].some(k => n.includes(k));
+                const hasFatCheat = ['炸', '腩', '芝士', '糖', '甜', '腸', '響鈴', '醬', '糕', '雪糕', '酒', '朱古力', '汽水', '可樂', '奶茶', '薯片', '牛角包'].some(k => n.includes(k));
+                const hasGoodFat = ['牛油果', '核桃', '堅果', '三文魚', '杏仁', '腰果'].some(k => n.includes(k));
+
+                // 全自動智能邏輯判斷
+                if (hasFatCheat) {
+                    cat = 'cheat'; rating = '熱量陷阱'; impact = 'high';
+                    feedback = '系統偵測到高脂/高糖成分！呢啲會迅速轉化為頑固脂肪，下一餐必須大幅扣減配額。';
+                } else if (hasCarb && !hasProtein && !hasVeg) {
+                    cat = 'carb'; rating = '純碳水炸彈'; impact = 'high';
+                    feedback = '缺乏蛋白質同纖維緩衝，會令血糖急升急跌！建議加返隻蛋或者少少菜減緩吸收。';
+                } else if (hasCarb && (hasProtein || hasVeg)) {
+                    cat = 'carb'; rating = '複合能量'; impact = 'medium';
+                    feedback = '有蛋白質/纖維幫手，呢份澱粉吸收得會比較平穩，適合做運動前嘅燃料。';
+                } else if (hasProtein && hasVeg) {
+                    cat = 'protein'; rating = '完美修復餐'; impact = 'low';
+                    feedback = '高蛋白加高纖維！飽腹感強兼且幫助肌肉修復，軍師極度推薦呢種黃金配搭！';
+                } else if (hasGoodFat) {
+                    cat = 'protein'; rating = '優質油脂'; impact = 'medium';
+                    feedback = '優質脂肪有助抗發炎同提供持久飽足感，但始終熱量唔低，請注意總份量。';
+                } else if (hasProtein) {
+                    cat = 'protein'; rating = '純粹肌肉燃料'; impact = 'low';
+                    feedback = '直接修補肌肉嘅優質建材。如果加多啲深綠色蔬菜一齊食，排毒效果會更好。';
+                } else if (hasVeg) {
+                    cat = 'veg'; rating = '去水排毒神器'; impact = 'low';
+                    feedback = '豐富纖維同鉀質，幫你排走多餘水分同鈉，係火鍋或者大餐後嘅急救救星。';
+                } else {
+                    cat = 'carb'; rating = '未知軍糧'; impact = 'medium'; 
+                    feedback = '軍師無法準確識別此食物，為安全起見預設歸類為澱粉，請留意攝取份量。';
+                }
+
+                return { category: cat, rating, feedback, impact };
             };
 
             const analyzeSituation = () => {
                 const carbCount = logs.filter(l => l.type === 'diet' && (l.category === 'carb' || l.category === 'cheat')).length;
                 const totalBurn = logs.filter(l => l.type === 'exercise').reduce((acc, curr) => acc + curr.calories, 0);
                 
-                let advice = { title: "軍師待命中", content: "數據同步中...", nextMeal: "視乎狀況", action: "等待指令", status: "normal" };
+                const now = new Date();
+                const currentHour = now.getHours();
+                
+                // 尋找最後一次進食與運動時間
+                const lastDietLog = logs.slice().reverse().find(l => l.type === 'diet');
+                const lastExerciseLog = logs.slice().reverse().find(l => l.type === 'exercise');
+                
+                let timeAdvice = "系統正收集數據...";
+                let nextMealTime = "視乎狀況";
+                let tacticalAction = "等待指令";
+                let status = "normal";
+                let title = "🛡️ 戰術推演中";
 
-                if (totalBurn >= 900) {
-                    advice = {
-                        title: "🔥 戰神級能量消耗！",
-                        content: `今日打波燒咗 ${totalBurn} kcal，直逼 1000 大關！你而家個身體係「燃脂火爐」。`,
-                        nextMeal: "睡前 2 小時前",
-                        action: "獎勵：可額外補充一份蛋白質，但絕對避開精緻澱粉。",
-                        status: "success"
-                    };
-                } else if (carbCount >= 3) {
-                    advice = {
-                        title: "⚠️ 澱粉配額紅區警戒！",
-                        content: `你今日已經食咗 ${carbCount} 次澱粉/甜食。就算你有運動，晚餐都必須執行「零澱粉禁令」。`,
-                        nextMeal: "今晚 8:00 PM 前",
-                        action: "晚餐戰術：禁食任何飯、麵、皮。只准食綠色蔬菜同白肉。",
-                        status: "warning"
-                    };
+                // 1. 根據「真實時間」與「消化週期」判定
+                if (currentHour >= 21 || currentHour <= 4) {
+                    title = "🌙 夜間代謝減慢";
+                    timeAdvice = "依家夜深，身體準備休息，消化能力下降。";
+                    nextMealTime = "明早起床後";
+                    tacticalAction = "全面禁食！真係餓到瞓唔著最多飲半杯無糖豆漿或蛋白。";
+                    status = "warning";
+                } else if (lastExerciseLog && (currentHour - parseInt(lastExerciseLog.time.split(':')[0])) <= 2 && (currentHour - parseInt(lastExerciseLog.time.split(':')[0])) >= 0) {
+                    title = "🏸 戰後黃金吸收期";
+                    timeAdvice = "剛完成高強度運動，肌肉細胞急需養分修復。";
+                    nextMealTime = "現在立即";
+                    tacticalAction = "極速補充蛋白質 (如雞胸、蛋) 及微量碳水，切忌捱餓！";
+                    status = "success";
+                } else if (lastDietLog) {
+                    const lastLogHour = parseInt(lastDietLog.time.split(':')[0]);
+                    const hoursSinceLastMeal = currentHour - lastLogHour;
+                    
+                    if (hoursSinceLastMeal < 3 && hoursSinceLastMeal >= 0) {
+                        title = "⏳ 消化推進中";
+                        timeAdvice = `距離上一餐只係過咗大約 ${hoursSinceLastMeal} 個鐘，食物仲消化緊。`;
+                        nextMealTime = `大約 ${lastLogHour + 4}:00 後`;
+                        tacticalAction = "如果口痕，請飲清水或黑咖啡，絕對避免攝取額外熱量。";
+                    } else if (hoursSinceLastMeal >= 4) {
+                        title = "🍽️ 能量谷底";
+                        timeAdvice = `距離上一餐已經超過 4 小時，血糖開始下降，係補充能量嘅好時機。`;
+                        nextMealTime = "現在適合進食";
+                        tacticalAction = "可以開始進食正餐，請依照軍師的成分配額分配。";
+                    } else {
+                        title = "🛡️ 穩定減脂期";
+                        timeAdvice = "目前處於平穩狀態，請維持規律作息。";
+                        nextMealTime = "感到7分餓時";
+                        tacticalAction = "保持水分充足，準備下一場戰役。";
+                    }
                 } else {
-                    advice = {
-                        title: "🛡️ 穩定減脂期",
-                        content: "維持目前節奏。今日運動量足夠，只要晚餐唔爆卡，聽日一定輕咗。",
-                        nextMeal: "正常晚餐時間",
-                        action: "建議：清雞湯蔬菜煲 + 豆腐。高飽腹、低負擔。",
-                        status: "normal"
-                    };
+                    title = "🌅 晨間啟動";
+                    timeAdvice = "今日仲未有進食紀錄，身體需要燃料啟動代謝。";
+                    nextMealTime = "隨時可以進食";
+                    tacticalAction = "建議以高蛋白+好脂肪嘅早餐開始 (如：雞蛋+牛油果)。";
                 }
-                setAdvisorMessage(advice);
+
+                // 2. 疊加「成分配額」判定 (高優先級覆蓋)
+                if (carbCount >= 3 && currentHour < 21) {
+                    title = "⚠️ 澱粉配額紅區警戒！";
+                    timeAdvice += ` 你今日已經食咗 ${carbCount} 次高碳水/邪惡食物。`;
+                    tacticalAction = "下一餐必須執行「絕對零澱粉禁令」，只准食綠色蔬菜同白肉！";
+                    status = "warning";
+                } else if (totalBurn >= 800 && currentHour < 21 && status !== "success") {
+                    title = "🔥 戰神級能量消耗！";
+                    timeAdvice += ` 今日消耗巨大 (-${totalBurn}kcal)。`;
+                    tacticalAction = "下一餐可略微增加優質蛋白質份量，獎勵辛勞嘅肌肉。";
+                    status = "success";
+                }
+
+                setAdvisorMessage({
+                    title: title,
+                    content: timeAdvice,
+                    nextMeal: nextMealTime,
+                    action: tacticalAction,
+                    status: status
+                });
             };
 
             const calculateCalories = (name, duration) => {
@@ -127,13 +206,12 @@
             const handleAddFood = (e) => {
                 e.preventDefault();
                 if (!foodName) return;
-                const analysis = getFoodAnalysis(foodName, foodCat);
+                const analysis = getFoodAnalysis(foodName);
                 setLogs([...logs, {
                     id: Date.now(),
                     type: 'diet',
                     time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
                     name: foodName,
-                    category: foodCat,
                     ...analysis
                 }]);
                 setFoodName('');
@@ -192,7 +270,7 @@
                 const updatedLogs = logs.map(log => {
                     if (log.id === editingId) {
                         if (log.type === 'diet') {
-                            const analysis = getFoodAnalysis(editValue.name, editValue.category);
+                            const analysis = getFoodAnalysis(editValue.name);
                             return { ...editValue, ...analysis };
                         } else {
                             return { ...editValue, calories: calculateCalories(editValue.name, editValue.duration) };
@@ -273,11 +351,9 @@
                             {activeTab === 'diet' && (
                                 <form onSubmit={handleAddFood} className="space-y-5">
                                     <h3 className="font-black text-xl italic uppercase text-slate-800">New Supply</h3>
-                                    <input type="text" placeholder="食咗啲乜？" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {[{id:'protein', label:'🥩 PROTEIN'}, {id:'veg', label:'🥬 FIBER'}, {id:'carb', label:'🍚 CARBS'}, {id:'cheat', label:'🍔 CHEAT'}].map(c => (
-                                            <button key={c.id} type="button" onClick={() => setFoodCat(c.id)} className={`py-3.5 rounded-2xl text-[10px] font-black border-2 transition-all ${foodCat === c.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-100 bg-slate-50 text-slate-400'}`}>{c.label}</button>
-                                        ))}
+                                    <input type="text" placeholder="食咗啲乜？ (例如: 雞胸肉/蘋果)" className="w-full px-6 py-4 bg-slate-100 rounded-2xl text-sm font-bold outline-none" value={foodName} onChange={(e) => setFoodName(e.target.value)} />
+                                    <div className="bg-blue-50 p-4 rounded-2xl text-xs font-bold text-blue-600 flex items-center">
+                                        <span className="text-lg mr-2">🤖</span> 軍師將根據食物名稱自動為您分析成分及評價。
                                     </div>
                                     <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs">Confirm Supply</button>
                                 </form>
@@ -342,9 +418,21 @@
                                                         <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.name} onChange={(e) => setEditValue({ ...editValue, name: e.target.value })} />
                                                         <input type="text" className="w-24 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-center" value={editValue.time} onChange={(e) => setEditValue({ ...editValue, time: e.target.value })} />
                                                     </div>
-                                                    <div className="flex space-x-3">
-                                                        <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black">SAVE</button>
-                                                        <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black">CANCEL</button>
+                                                    
+                                                    {log.type === 'exercise' && (
+                                                        <div className="flex flex-col space-y-1">
+                                                            <label className="text-[9px] font-black text-slate-400 ml-1">DURATION (MINS)</label>
+                                                            <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none" value={editValue.duration} onChange={(e) => setEditValue({ ...editValue, duration: parseInt(e.target.value) || 0 })} />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className="flex space-x-3 pt-2">
+                                                        <button onClick={saveEdit} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black flex justify-center items-center shadow-lg shadow-emerald-100 active:scale-95 transition-all">
+                                                            ✅ SAVE
+                                                        </button>
+                                                        <button onClick={() => setEditingId(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl text-xs font-black flex justify-center items-center active:scale-95 transition-all">
+                                                            ❌ CANCEL
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ) : (
