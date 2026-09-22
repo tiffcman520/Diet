@@ -3,1289 +3,1104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 減肥專屬營養師</title>
-    <!-- Tailwind CSS -->
+    <title>AI 減肥營養師 - 60kg 瘦身計劃</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
         .gradient-emerald {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased pb-20 md:pb-0">
+<body class="text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
 
-<!-- Top Navigation Header -->
-<header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl gradient-emerald flex items-center justify-center text-white shadow-md shadow-emerald-200">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <h1 class="font-bold text-lg text-slate-900 leading-tight">AI 減肥專屬營養師</h1>
-                <p class="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
-                    <span id="header-goal-subtitle">60kg 瘦身計劃進行中</span>
-                </p>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-2">
-            <button onclick="openSettingsModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium flex items-center gap-1.5 transition">
-                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-                <span id="header-profile-text">163cm | 69.0kg</span>
-            </button>
-        </div>
-    </div>
-</header>
-
-<!-- Main Content Container -->
-<main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-6">
-    
-    <!-- Sidebar Navigation (Desktop) -->
-    <aside class="hidden md:block md:col-span-3 space-y-2">
-        <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm sticky top-20">
-            <nav class="space-y-1">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-600 bg-emerald-50 transition">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 今日總覽
-                </button>
-                <button onclick="switchTab('analyzer')" id="nav-analyzer" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
-                    <i data-lucide="camera" class="w-4 h-4"></i> 每餐相片分析
-                </button>
-                <button onclick="switchTab('weight')" id="nav-weight" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
-                    <i data-lucide="trending-down" class="w-4 h-4"></i> 體重追蹤
-                </button>
-                <button onclick="switchTab('chat')" id="nav-chat" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
-                    <i data-lucide="message-square" class="w-4 h-4"></i> 營養師諮詢
-                </button>
-            </nav>
-
-            <!-- Target Progress Card -->
-            <div class="mt-6 pt-4 border-t border-slate-100 px-2">
-                <div class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl p-4 text-white shadow-sm">
-                    <div class="text-xs opacity-80 mb-1">目標距離</div>
-                    <div class="text-2xl font-extrabold mb-1" id="sidebar-weight-left">還差 9.0 kg</div>
-                    <div class="w-full bg-white/30 h-2 rounded-full overflow-hidden mb-2">
-                        <div class="bg-white h-full rounded-full transition-all duration-500" id="sidebar-progress-bar" style="width: 0%"></div>
-                    </div>
-                    <div class="flex justify-between text-[10px] opacity-90">
-                        <span id="sidebar-start-text">起點: 69.0 kg</span>
-                        <span id="sidebar-target-text">目標: 60.0 kg</span>
-                    </div>
+    <!-- Top Navigation Header -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl gradient-emerald flex items-center justify-center text-white shadow-md shadow-emerald-200">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">AI 減肥專屬營養師</h1>
+                    <p class="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
+                        <span id="header-goal-subtitle">60kg 瘦身計劃進行中</span>
+                    </p>
                 </div>
             </div>
-        </div>
-    </aside>
-
-    <!-- Tab Content Area -->
-    <section class="col-span-1 md:col-span-9 space-y-6">
-
-        <!-- DASHBOARD TAB -->
-        <div id="tab-dashboard" class="tab-content space-y-6">
             
-            <!-- Date Selector Toolbar -->
-            <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-4 h-4 text-emerald-600"></i>
-                    <span class="text-xs font-bold text-slate-700">查看/記錄日期：</span>
-                    <input type="date" id="dash-date-picker" onchange="changeDashboardDate(this.value)" class="border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:border-emerald-500 bg-slate-50">
-                    <span id="today-tag" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">今日</span>
-                </div>
-                <div class="flex items-center gap-1 text-xs">
-                    <button onclick="shiftDashboardDate(-1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">◀ 上一日</button>
-                    <button onclick="resetDashboardToToday()" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg transition">回到今日</button>
-                    <button onclick="shiftDashboardDate(1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">下一日 ▶</button>
-                </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openSettingsModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium flex items-center gap-1.5 transition">
+                    <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                    <span id="header-profile-text">163cm | 69.0kg</span>
+                </button>
             </div>
+        </div>
+    </header>
 
-            <!-- Target Overview Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-                        <span>食物攝取</span>
-                        <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-extrabold text-slate-900" id="dash-cal-text">0 / 1450</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">kcal (飲食)</div>
-                    </div>
-                </div>
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="hidden md:block md:col-span-3 space-y-2">
+            <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm sticky top-20">
+                <nav class="space-y-1">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-emerald-600 bg-emerald-50 transition">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 今日總覽
+                    </button>
+                    <button onclick="switchTab('analyzer')" id="nav-analyzer" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                        <i data-lucide="camera" class="w-4 h-4"></i> 每餐相片分析
+                    </button>
+                    <button onclick="switchTab('weight')" id="nav-weight" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i> 體重追蹤
+                    </button>
+                    <button onclick="switchTab('chat')" id="nav-chat" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                        <i data-lucide="message-square" class="w-4 h-4"></i> 營養師諮詢
+                    </button>
+                </nav>
 
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-                        <span>運動消耗</span>
-                        <i data-lucide="activity" class="w-4 h-4 text-rose-500"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-extrabold text-rose-600" id="dash-burn-text">0 kcal</div>
-                        <div class="text-[11px] text-rose-500 font-medium cursor-pointer hover:underline mt-0.5" onclick="openWorkoutModal()">+ Apple Watch 運動</div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-                        <span>蛋白質</span>
-                        <i data-lucide="beef" class="w-4 h-4 text-amber-600"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-extrabold text-slate-900" id="dash-protein-text">0 / 75</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">克 (維護肌肉)</div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-                        <span>目前 BMI</span>
-                        <i data-lucide="gauge" class="w-4 h-4 text-emerald-500"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-extrabold text-slate-900" id="dash-bmi-text">26.0</div>
-                        <div class="text-[11px] text-amber-600 font-medium mt-0.5" id="dash-target-bmi-text">目標 BMI: 22.6</div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between col-span-2 lg:col-span-1">
-                    <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-                        <span>飲水量</span>
-                        <i data-lucide="droplet" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-extrabold text-slate-900" id="dash-water-text">0 / 2000</div>
-                        <div class="flex gap-2 text-[10px] mt-0.5 font-medium">
-                            <span class="text-blue-600 cursor-pointer hover:underline" onclick="addWater(250)">+250ml</span>
-                            <span class="text-blue-600 cursor-pointer hover:underline" onclick="addWater(500)">+500ml</span>
+                <!-- Target Progress Card -->
+                <div class="mt-6 pt-4 border-t border-slate-100 px-2">
+                    <div class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl p-4 text-white shadow-sm">
+                        <div class="text-xs opacity-80 mb-1">目標距離</div>
+                        <div class="text-2xl font-extrabold mb-1" id="sidebar-weight-left">還差 9.0 kg</div>
+                        <div class="w-full bg-white/30 h-2 rounded-full overflow-hidden mb-2">
+                            <div class="bg-white h-full rounded-full transition-all duration-500" id="sidebar-progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] opacity-90">
+                            <span id="sidebar-start-text">起點: 69.0 kg</span>
+                            <span id="sidebar-target-text">目標: 60.0 kg</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </aside>
 
-            <!-- Active Deficit Summary Banner -->
-            <div class="bg-slate-900 rounded-2xl p-4 text-white flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                        <i data-lucide="zap" class="w-5 h-5"></i>
+        <!-- Tab Content Area -->
+        <section class="col-span-1 md:col-span-9 space-y-6">
+
+            <!-- DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                
+                <!-- Date Selector Toolbar -->
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-emerald-600"></i>
+                        <span class="text-xs font-bold text-slate-700">查看/記錄日期：</span>
+                        <input type="date" id="dash-date-picker" onchange="changeDashboardDate(this.value)" class="border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:border-emerald-500 bg-slate-50">
+                        <span id="today-tag" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">今日</span>
                     </div>
+                    <div class="flex items-center gap-1 text-xs">
+                        <button onclick="shiftDashboardDate(-1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">◀ 上一日</button>
+                        <button onclick="resetDashboardToToday()" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg transition">回到今日</button>
+                        <button onclick="shiftDashboardDate(1)" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">下一日 ▶</button>
+                    </div>
+                </div>
+
+                <!-- Target Overview Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
+                            <span>食物攝取</span>
+                            <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-extrabold text-slate-900" id="dash-cal-text">0 / 1450</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">kcal (飲食)</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
+                            <span>運動消耗</span>
+                            <i data-lucide="activity" class="w-4 h-4 text-rose-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-extrabold text-rose-600" id="dash-burn-text">0 kcal</div>
+                            <div class="text-[11px] text-rose-500 font-medium cursor-pointer hover:underline mt-0.5" onclick="openWorkoutModal()">+ Apple Watch 運動</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
+                            <span>蛋白質</span>
+                            <i data-lucide="beef" class="w-4 h-4 text-amber-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-extrabold text-slate-900" id="dash-protein-text">0 / 75</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">克 (維持肌肉)</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
+                            <span>目前 BMI</span>
+                            <i data-lucide="gauge" class="w-4 h-4 text-emerald-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-extrabold text-slate-900" id="dash-bmi-text">26.0</div>
+                            <div class="text-[11px] text-amber-600 font-medium mt-0.5" id="dash-target-bmi-text">目標 BMI: 22.6</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between col-span-2 lg:col-span-1">
+                        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
+                            <span>飲水量</span>
+                            <i data-lucide="droplet" class="w-4 h-4 text-blue-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-extrabold text-slate-900" id="dash-water-text">0 / 2000</div>
+                            <div class="flex gap-2 text-[10px] mt-0.5 font-medium">
+                                <span class="text-blue-600 cursor-pointer hover:underline" onclick="addWater(250)">+250ml</span>
+                                <span class="text-blue-600 cursor-pointer hover:underline" onclick="addWater(500)">+500ml</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Deficit Summary Banner -->
+                <div class="bg-slate-900 rounded-2xl p-4 text-white flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400 font-medium">今日淨卡路里 (Net Calories)</div>
+                            <div class="text-lg font-extrabold text-emerald-400" id="net-calorie-text">0 kcal (熱量赤字中)</div>
+                        </div>
+                    </div>
+                    <button onclick="openWorkoutModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md">
+                        <i data-lucide="watch" class="w-4 h-4"></i> 記錄 Apple Watch 運動/羽毛球
+                    </button>
+                </div>
+
+                <!-- Quick Action Banner -->
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="space-y-1 text-center sm:text-left">
+                        <span class="inline-block px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">即時 AI 分析</span>
+                        <h2 class="text-lg font-bold">準備好影你嘅餐點未？</h2>
+                        <p class="text-xs text-emerald-100 max-w-md">影低食物相片，AI 營養師即時幫你估算卡路里、三大營養素，並提供廣東話專業飲食建議！</p>
+                    </div>
+                    <button onclick="switchTab('analyzer')" class="px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 whitespace-nowrap">
+                        <i data-lucide="camera" class="w-4 h-4"></i> 影相評估餐點
+                    </button>
+                </div>
+
+                <!-- Activity Feed Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Today's Meal Log -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i> 今日飲食記錄
+                            </h3>
+                            <span class="text-xs text-slate-500" id="meal-count-badge">已記錄 0 餐</span>
+                        </div>
+
+                        <div id="meals-list-container" class="space-y-3">
+                            <!-- Dynamically rendered -->
+                        </div>
+                    </div>
+
+                    <!-- Today's Exercise Log -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i data-lucide="dumbbell" class="w-4 h-4 text-rose-600"></i> 今日運動與消耗
+                            </h3>
+                            <button onclick="openWorkoutModal()" class="text-xs text-rose-600 font-semibold hover:underline flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> 新增運動
+                            </button>
+                        </div>
+
+                        <div id="workouts-list-container" class="space-y-3">
+                            <!-- Dynamically rendered -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ANALYZER TAB -->
+            <div id="tab-analyzer" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-5">
                     <div>
-                        <div class="text-xs text-slate-400 font-medium">今日淨卡路里 (Net Calories)</div>
-                        <div class="text-lg font-extrabold text-emerald-400" id="net-calorie-text">0 kcal (熱量赤字中)</div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="camera" class="w-5 h-5 text-emerald-600"></i> AI 每餐相片評價
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">上傳或拍攝你嘅餐點相片，Gemini AI 視覺神經網絡會直接識別食材並進行精準評分！</p>
                     </div>
+
+                    <!-- File Drop Zone -->
+                    <div id="drop-zone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/40 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[200px]">
+                        <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                        <div id="upload-prompt" class="space-y-2">
+                            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2">
+                                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                            </div>
+                            <p class="text-sm font-semibold text-slate-700">點擊上傳 / 拍攝食物相片</p>
+                            <p class="text-xs text-slate-400">💡 提示：影清楚全盤食物、光線充足，識別會更準確</p>
+                        </div>
+                        <div id="image-preview-container" class="hidden w-full flex flex-col items-center gap-3">
+                            <img id="image-preview" src="" alt="Preview" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm">
+                            <p class="text-xs text-slate-500">已選擇相片，點擊下方按鈕進行 AI 視覺分析</p>
+                        </div>
+                    </div>
+
+                    <!-- Details Input -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">餐別</label>
+                            <select id="meal-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                                <option value="早餐">早餐</option>
+                                <option value="午餐" selected>午餐</option>
+                                <option value="晚餐">晚餐</option>
+                                <option value="下午茶/小食">下午茶/小食</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">補充說明 (幫助 AI 提升 100% 準確率)</label>
+                            <input type="text" id="meal-notes" placeholder="例如：少飯、走汁、太興切雞油雞、凍無糖燕麥Latte..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <button id="analyze-btn" onclick="analyzeMealImage()" class="w-full py-3.5 gradient-emerald text-white font-bold rounded-xl shadow-md hover:opacity-95 transition flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價
+                    </button>
                 </div>
-                <button onclick="openWorkoutModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md">
-                    <i data-lucide="watch" class="w-4 h-4"></i> 記錄 Apple Watch 運動/羽毛球
-                </button>
+
+                <!-- Analysis Result Card -->
+                <div id="analysis-result-card" class="hidden bg-white rounded-2xl p-6 border border-emerald-200 shadow-md space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg" id="res-meal-type">午餐</span>
+                            <h3 class="font-bold text-slate-900 text-base" id="res-title">分析結果</h3>
+                        </div>
+                        <div class="flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                            <span class="text-xs text-slate-500">評分：</span>
+                            <span class="text-emerald-700 font-extrabold text-sm" id="res-score">8.5 / 10</span>
+                        </div>
+                    </div>
+
+                    <!-- Macro Breakdown -->
+                    <div class="grid grid-cols-4 gap-2 text-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div>
+                            <div class="text-[10px] text-slate-400">熱量</div>
+                            <div class="font-extrabold text-slate-800 text-sm" id="res-cal">0 kcal</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">蛋白質</div>
+                            <div class="font-extrabold text-slate-800 text-sm" id="res-protein">0g</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">碳水化合物</div>
+                            <div class="font-extrabold text-slate-800 text-sm" id="res-carbs">0g</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">脂肪</div>
+                            <div class="font-extrabold text-slate-800 text-sm" id="res-fats">0g</div>
+                        </div>
+                    </div>
+
+                    <!-- Pros & Suggestions -->
+                    <div class="space-y-3 text-sm">
+                        <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100">
+                            <h4 class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 mb-1">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i> 優點分析
+                            </h4>
+                            <p class="text-slate-700 text-xs leading-relaxed" id="res-pros">--</p>
+                        </div>
+
+                        <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100">
+                            <h4 class="font-bold text-amber-800 text-xs flex items-center gap-1.5 mb-1">
+                                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600"></i> 減肥改善建議
+                            </h4>
+                            <p class="text-slate-700 text-xs leading-relaxed" id="res-suggestions">--</p>
+                        </div>
+                    </div>
+
+                    <button onclick="saveMealToLog()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> 儲存至今日飲食記錄
+                    </button>
+                </div>
             </div>
 
-            <!-- Quick Action Banner -->
-            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="space-y-1 text-center sm:text-left">
-                    <span class="inline-block px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">即時 AI 分析</span>
-                    <h2 class="text-lg font-bold">準備好影你嘅餐點未？</h2>
-                    <p class="text-xs text-emerald-100 max-w-md">影低食物相片，AI 營養師即時幫你估算卡路里、三大營養素，並提供廣東話專業飲食建議！</p>
-                </div>
-                <button onclick="switchTab('analyzer')" class="px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 whitespace-nowrap">
-                    <i data-lucide="camera" class="w-4 h-4"></i> 影相評估餐點
-                </button>
-            </div>
-
-            <!-- Activity Feed Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Today's Meal Log -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i> 今日飲食記錄
-                        </h3>
-                        <span class="text-xs text-slate-500" id="meal-count-badge">已記錄 0 餐</span>
-                    </div>
-
-                    <div id="meals-list-container" class="space-y-3">
-                        <!-- Dynamically rendered -->
-                    </div>
-                </div>
-
-                <!-- Today's Exercise Log -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <i data-lucide="dumbbell" class="w-4 h-4 text-rose-600"></i> 今日運動與消耗
-                        </h3>
-                        <button onclick="openWorkoutModal()" class="text-xs text-rose-600 font-semibold hover:underline flex items-center gap-1">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 新增運動
+            <!-- WEIGHT TRACKER TAB -->
+            <div id="tab-weight" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="trending-down" class="w-5 h-5 text-emerald-600"></i> 減重進度追蹤
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1" id="weight-subtitle-text">目前體重 69.0 kg ➔ 目標體重 60.0 kg</p>
+                        </div>
+                        <button onclick="openWeightModal()" class="px-4 py-2 gradient-emerald text-white rounded-xl text-xs font-bold shadow hover:opacity-95 transition flex items-center gap-1.5">
+                            <i data-lucide="plus" class="w-4 h-4"></i> 記錄今日體重
                         </button>
                     </div>
 
-                    <div id="workouts-list-container" class="space-y-3">
-                        <!-- Dynamically rendered -->
+                    <!-- Progress Bar -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-slate-600">總減重進度</span>
+                            <span class="text-emerald-600" id="weight-progress-percent">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                            <div id="weight-progress-fill" class="gradient-emerald h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Canvas -->
+                    <div class="h-64 w-full">
+                        <canvas id="weightChart"></canvas>
+                    </div>
+
+                    <!-- History Table -->
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-slate-800 text-sm">體重記錄歷史</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-500 font-semibold">
+                                        <th class="p-2.5">日期</th>
+                                        <th class="p-2.5">體重</th>
+                                        <th class="p-2.5">BMI</th>
+                                        <th class="p-2.5">累積變化</th>
+                                        <th class="p-2.5 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="weight-history-table">
+                                    <!-- Dynamically filled -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-        </div>
-
-        <!-- ANALYZER TAB -->
-        <div id="tab-analyzer" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-5">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <i data-lucide="camera" class="w-5 h-5 text-emerald-600"></i> AI 每餐相片評價
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-1">上傳或拍攝你嘅餐點相片，Gemini AI 視覺神經網絡會直接識別食材並進行精準評分！</p>
-                </div>
-
-                <!-- File Drop Zone -->
-                <div id="drop-zone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/40 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[200px]">
-                    <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                    <div id="upload-prompt" class="space-y-2">
-                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2">
-                            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+            <!-- CHAT TAB -->
+            <div id="tab-chat" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col h-[600px]">
+                    <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="message-square" class="w-5 h-5 text-emerald-600"></i> AI 減肥專屬營養師
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5" id="chat-profile-sub">廣東話對話 | 隨時諮詢外賣、運動與飲食建議</p>
                         </div>
-                        <p class="text-sm font-semibold text-slate-700">點擊上傳 / 拍攝食物相片</p>
-                        <p class="text-xs text-slate-400">💡 提示：影清楚全盤食物、光線充足，識別會更準確</p>
+                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">24h 在線</span>
                     </div>
-                    <div id="image-preview-container" class="hidden w-full flex flex-col items-center gap-3">
-                        <img id="image-preview" src="" alt="Preview" class="max-h-64 rounded-xl border border-slate-200 object-contain shadow-sm">
-                        <p class="text-xs text-slate-500">已選擇相片，點擊下方按鈕進行 AI 視覺分析</p>
+
+                    <!-- Chat Messages Scroll Area -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 pr-2 text-xs">
+                        <!-- Dynamically rendered -->
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="pt-3 border-t border-slate-100 flex gap-2">
+                        <input type="text" id="chat-input" onkeydown="if(event.key === 'Enter') sendChatMessage()" placeholder="問下營養師：「今晚食太興燒味，點揀比較健康？」" class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-emerald-500">
+                        <button onclick="sendChatMessage()" class="px-4 py-2.5 gradient-emerald text-white rounded-xl font-bold text-xs shadow hover:opacity-95 transition flex items-center gap-1">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> 發送
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Mobile Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40">
+        <button onclick="switchTab('dashboard')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-emerald-600 font-semibold">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span>總覽</span>
+        </button>
+        <button onclick="switchTab('analyzer')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
+            <i data-lucide="camera" class="w-5 h-5"></i>
+            <span>相片分析</span>
+        </button>
+        <button onclick="switchTab('weight')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
+            <i data-lucide="trending-down" class="w-5 h-5"></i>
+            <span>體重</span>
+        </button>
+        <button onclick="switchTab('chat')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
+            <i data-lucide="message-square" class="w-5 h-5"></i>
+            <span>營養師</span>
+        </button>
+    </nav>
+
+    <!-- Workout Entry / Edit Modal -->
+    <div id="workout-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                        <i data-lucide="watch" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-sm" id="workout-modal-title">記錄 Apple Watch 運動</h3>
+                </div>
+                <button onclick="closeWorkoutModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">日期</label>
+                        <input type="date" id="workout-date-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">時間</label>
+                        <input type="time" id="workout-time-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
                     </div>
                 </div>
 
-                <!-- Details Input -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">運動類型</label>
+                    <select id="workout-type-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
+                        <option value="羽毛球 🏸" selected>羽毛球 🏸</option>
+                        <option value="跑步 / 慢跑 🏃">跑步 / 慢跑 🏃</option>
+                        <option value="高強度間歇 HIIT ⚡">高強度間歇 HIIT ⚡</option>
+                        <option value="力量訓練 / 健身 🏋️">力量訓練 / 健身 🏋️</option>
+                        <option value="快步走 / 散步 🚶">快步走 / 散步 🚶</option>
+                        <option value="游泳 🏊">游泳 🏊</option>
+                        <option value="單車 🚴">單車 🚴</option>
+                        <option value="其他運動 🔥">其他運動 🔥</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">時長 (分鐘)</label>
+                        <input type="number" id="workout-duration-input" placeholder="例如: 60" value="60" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">消耗卡路里 (kcal)</label>
+                        <input type="number" id="workout-cal-input" placeholder="例如: 420" value="420" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">備註 / 平均心率 (選填)</label>
+                    <input type="text" id="workout-note-input" placeholder="例如: 平均心率 142 bpm / 雙打比賽" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
+                </div>
+            </div>
+
+            <button onclick="saveWorkoutEntry()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i> 儲存運動記錄
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Meal Modal -->
+    <div id="edit-meal-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <i data-lucide="utensils" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-sm">修改飲食記錄</h3>
+                </div>
+                <button onclick="closeEditMealModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">日期</label>
+                        <input type="date" id="edit-meal-date" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">時間</label>
+                        <input type="time" id="edit-meal-time" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">餐別名稱</label>
+                    <input type="text" id="edit-meal-title" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">餐別</label>
-                        <select id="meal-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        <select id="edit-meal-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                             <option value="早餐">早餐</option>
-                            <option value="午餐" selected>午餐</option>
+                            <option value="午餐">午餐</option>
                             <option value="晚餐">晚餐</option>
                             <option value="下午茶/小食">下午茶/小食</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">補充說明 (幫助 AI 提升 100% 準確率)</label>
-                        <input type="text" id="meal-notes" placeholder="例如：少飯、走汁、太興切雞油雞、凍無糖燕麥Latte..." class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">卡路里 (kcal)</label>
+                        <input type="number" id="edit-meal-cal" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                     </div>
                 </div>
 
-                <button id="analyze-btn" onclick="analyzeMealImage()" class="w-full py-3.5 gradient-emerald text-white font-bold rounded-xl shadow-md hover:opacity-95 transition flex items-center justify-center gap-2">
-                    <i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">蛋白質 (g)</label>
+                    <input type="number" id="edit-meal-protein" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <button onclick="saveEditMeal()" class="w-full py-2.5 gradient-emerald text-white rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i> 儲存修改
+            </button>
+        </div>
+    </div>
+
+    <!-- Weight Entry Modal -->
+    <div id="weight-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-sm">記錄今日體重</h3>
+                <button onclick="closeWeightModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">體重 (kg)</label>
+                <input type="number" step="0.1" id="new-weight-input" placeholder="例如：68.5" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+            </div>
+            <button onclick="saveWeightEntry()" class="w-full py-2.5 gradient-emerald text-white rounded-xl text-xs font-bold shadow transition">
+                儲存體重
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings & Profile Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5 text-emerald-600"></i>
+                    <h3 class="font-bold text-slate-900 text-base">個人數據與設定</h3>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <!-- Analysis Result Card -->
-            <div id="analysis-result-card" class="hidden bg-white rounded-2xl p-6 border border-emerald-200 shadow-md space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg" id="res-meal-type">午餐</span>
-                        <h3 class="font-bold text-slate-900 text-base" id="res-title">分析結果</h3>
+            <!-- Profile Settings -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">個人基本目標</h4>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">身高 (cm)</label>
+                        <input type="number" id="setting-height" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                     </div>
-                    <div class="flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                        <span class="text-xs text-slate-500">評分：</span>
-                        <span class="text-emerald-700 font-extrabold text-sm" id="res-score">8.5 / 10</span>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">起點體重 (kg)</label>
+                        <input type="number" step="0.1" id="setting-start-weight" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                     </div>
                 </div>
 
-                <!-- Macro Breakdown -->
-                <div class="grid grid-cols-4 gap-2 text-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <div class="text-[10px] text-slate-400">熱量</div>
-                        <div class="font-extrabold text-slate-800 text-sm" id="res-cal">0 kcal</div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">目標體重 (kg)</label>
+                        <input type="number" step="0.1" id="setting-target-weight" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
-                        <div class="text-[10px] text-slate-400">蛋白質</div>
-                        <div class="font-extrabold text-slate-800 text-sm" id="res-protein">0g</div>
-                    </div>
-                    <div>
-                        <div class="text-[10px] text-slate-400">碳水化合物</div>
-                        <div class="font-extrabold text-slate-800 text-sm" id="res-carbs">0g</div>
-                    </div>
-                    <div>
-                        <div class="text-[10px] text-slate-400">脂肪</div>
-                        <div class="font-extrabold text-slate-800 text-sm" id="res-fats">0g</div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">每日目標 (kcal)</label>
+                        <input type="number" id="setting-target-cal" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                     </div>
                 </div>
+            </div>
 
-                <!-- Pros & Suggestions -->
-                <div class="space-y-3 text-sm">
-                    <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100">
-                        <h4 class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 mb-1">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i> 優點分析
-                        </h4>
-                        <p class="text-slate-700 text-xs leading-relaxed" id="res-pros">--</p>
-                    </div>
-
-                    <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100">
-                        <h4 class="font-bold text-amber-800 text-xs flex items-center gap-1.5 mb-1">
-                            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600"></i> 減肥改善建議
-                        </h4>
-                        <p class="text-slate-700 text-xs leading-relaxed" id="res-suggestions">--</p>
-                    </div>
+            <!-- API Key & Proxy Settings -->
+            <div class="space-y-3 pt-2 border-t border-slate-100">
+                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Gemini API 設定</h4>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key</label>
+                    <input type="password" id="setting-api-key" placeholder="貼上你的 API Key (AIzaSy...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                 </div>
 
-                <button onclick="saveMealToLog()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i> 儲存至今日飲食記錄
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">API 代理位址 (Custom Proxy URL)</label>
+                    <input type="text" id="setting-api-proxy" placeholder="留空使用官方域名，或填寫 Cloudflare Worker 代理位址" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    <p class="text-[10px] text-amber-600 mt-1">
+                        💡 <b>香港/受限地區用戶特別提示：</b> 若遇到 "User location is not supported"，請開啟 VPN (轉至台灣/日本/美國)，或在此處填入你搭建的 Cloudflare Worker 代理網址。
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <button onclick="saveSettings()" class="w-full py-2.5 gradient-emerald text-white font-bold rounded-xl text-xs transition shadow">
+                    儲存設定
+                </button>
+                <button onclick="resetAllData()" class="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-medium rounded-xl text-xs transition">
+                    重置所有資料並重新開始
                 </button>
             </div>
         </div>
-
-        <!-- WEIGHT TRACKER TAB -->
-        <div id="tab-weight" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <i data-lucide="trending-down" class="w-5 h-5 text-emerald-600"></i> 減重進度追蹤
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-1" id="weight-subtitle-text">目前體重 69.0 kg ➔ 目標體重 60.0 kg</p>
-                    </div>
-                    <button onclick="openWeightModal()" class="px-4 py-2 gradient-emerald text-white rounded-xl text-xs font-bold shadow hover:opacity-95 transition flex items-center gap-1.5">
-                        <i data-lucide="plus" class="w-4 h-4"></i> 記錄今日體重
-                    </button>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
-                    <div class="flex justify-between text-xs font-bold">
-                        <span class="text-slate-600">總減重進度</span>
-                        <span class="text-emerald-600" id="weight-progress-percent">0%</span>
-                    </div>
-                    <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
-                        <div id="weight-progress-fill" class="gradient-emerald h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <!-- Chart Canvas -->
-                <div class="h-64 w-full">
-                    <canvas id="weightChart"></canvas>
-                </div>
-
-                <!-- History Table -->
-                <div class="space-y-3">
-                    <h3 class="font-bold text-slate-800 text-sm">體重記錄歷史</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-200 text-slate-500 font-semibold">
-                                    <th class="p-2.5">日期</th>
-                                    <th class="p-2.5">體重</th>
-                                    <th class="p-2.5">BMI</th>
-                                    <th class="p-2.5">累積變化</th>
-                                    <th class="p-2.5 text-right">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="weight-history-table">
-                                <!-- Dynamically filled -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CHAT TAB -->
-        <div id="tab-chat" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col h-[600px]">
-                <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <i data-lucide="message-square" class="w-5 h-5 text-emerald-600"></i> AI 減肥專屬營養師
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-0.5" id="chat-profile-sub">廣東話對話 | 隨時諮詢外賣、運動與飲食建議</p>
-                    </div>
-                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">24h 在線</span>
-                </div>
-
-                <!-- Chat Messages Scroll Area -->
-                <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 pr-2 text-xs">
-                    <!-- Dynamically rendered -->
-                </div>
-
-                <!-- Chat Input -->
-                <div class="pt-3 border-t border-slate-100 flex gap-2">
-                    <input type="text" id="chat-input" onkeydown="if(event.key === 'Enter') sendChatMessage()" placeholder="問下營養師：「今晚食太興燒味，點揀比較健康？」" class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-emerald-500">
-                    <button onclick="sendChatMessage()" class="px-4 py-2.5 gradient-emerald text-white rounded-xl font-bold text-xs shadow hover:opacity-95 transition flex items-center gap-1">
-                        <i data-lucide="send" class="w-3.5 h-3.5"></i> 發送
-                    </button>
-                </div>
-            </div>
-        </div>
-
-    </section>
-</main>
-
-<!-- Mobile Navigation Bar -->
-<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40">
-    <button onclick="switchTab('dashboard')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-emerald-600 font-semibold">
-        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-        <span>總覽</span>
-    </button>
-    <button onclick="switchTab('analyzer')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
-        <i data-lucide="camera" class="w-5 h-5"></i>
-        <span>相片分析</span>
-    </button>
-    <button onclick="switchTab('weight')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
-        <i data-lucide="trending-down" class="w-5 h-5"></i>
-        <span>體重</span>
-    </button>
-    <button onclick="switchTab('chat')" class="tab-btn flex flex-col items-center gap-1 text-[10px] text-slate-500">
-        <i data-lucide="message-square" class="w-5 h-5"></i>
-        <span>營養師</span>
-    </button>
-</nav>
-
-<!-- Workout Entry / Edit Modal -->
-<div id="workout-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                    <i data-lucide="watch" class="w-4 h-4"></i>
-                </div>
-                <h3 class="font-bold text-slate-900 text-sm" id="workout-modal-title">記錄 Apple Watch 運動</h3>
-            </div>
-            <button onclick="closeWorkoutModal()" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-        
-        <div class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">日期</label>
-                    <input type="date" id="workout-date-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">時間</label>
-                    <input type="time" id="workout-time-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">運動類型</label>
-                <select id="workout-type-input" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-                    <option value="羽毛球 🏸" selected>羽毛球 🏸</option>
-                    <option value="跑步 / 慢跑 🏃">跑步 / 慢跑 🏃</option>
-                    <option value="高強度間歇 HIIT ⚡">高強度間歇 HIIT ⚡</option>
-                    <option value="力量訓練 / 健身 🏋️">力量訓練 / 健身 🏋️</option>
-                    <option value="快步走 / 散步 🚶">快步走 / 散步 🚶</option>
-                    <option value="游泳 🏊">游泳 🏊</option>
-                    <option value="單車 🚴">單車 🚴</option>
-                    <option value="其他運動 🔥">其他運動 🔥</option>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">時長 (分鐘)</label>
-                    <input type="number" id="workout-duration-input" placeholder="例如: 60" value="60" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">消耗卡路里 (kcal)</label>
-                    <input type="number" id="workout-cal-input" placeholder="例如: 420" value="420" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">備註 / 平均心率 (選填)</label>
-                <input type="text" id="workout-note-input" placeholder="例如: 平均心率 142 bpm / 雙打比賽" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-            </div>
-        </div>
-
-        <button onclick="saveWorkoutEntry()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
-            <i data-lucide="check" class="w-4 h-4"></i> 儲存運動記錄
-        </button>
     </div>
-</div>
 
-<!-- Edit Meal Modal -->
-<div id="edit-meal-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                    <i data-lucide="utensils" class="w-4 h-4"></i>
-                </div>
-                <h3 class="font-bold text-slate-900 text-sm">修改飲食記錄</h3>
-            </div>
-            <button onclick="closeEditMealModal()" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-        
-        <div class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">日期</label>
-                    <input type="date" id="edit-meal-date" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">時間</label>
-                    <input type="time" id="edit-meal-time" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">餐別名稱</label>
-                <input type="text" id="edit-meal-title" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">餐別</label>
-                    <select id="edit-meal-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                        <option value="早餐">早餐</option>
-                        <option value="午餐">午餐</option>
-                        <option value="晚餐">晚餐</option>
-                        <option value="下午茶/小食">下午茶/小食</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">卡路里 (kcal)</label>
-                    <input type="number" id="edit-meal-cal" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">蛋白質 (g)</label>
-                <input type="number" id="edit-meal-protein" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-            </div>
-        </div>
-
-        <button onclick="saveEditMeal()" class="w-full py-2.5 gradient-emerald text-white rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5">
-            <i data-lucide="check" class="w-4 h-4"></i> 儲存修改
-        </button>
-    </div>
-</div>
-
-<!-- Weight Entry Modal -->
-<div id="weight-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h3 class="font-bold text-slate-900 text-sm">記錄今日體重</h3>
-            <button onclick="closeWeightModal()" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">體重 (kg)</label>
-            <input type="number" step="0.1" id="new-weight-input" placeholder="例如：68.5" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
-        </div>
-        <button onclick="saveWeightEntry()" class="w-full py-2.5 gradient-emerald text-white rounded-xl text-xs font-bold shadow transition">
-            儲存體重
-        </button>
-    </div>
-</div>
-
-<!-- Settings & Profile Modal -->
-<div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2">
-                <i data-lucide="sliders" class="w-5 h-5 text-emerald-600"></i>
-                <h3 class="font-bold text-slate-900 text-base">個人數據與 API 設定</h3>
-            </div>
-            <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <!-- Profile Settings -->
-        <div class="space-y-3">
-            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">個人基本目標</h4>
-            
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">身高 (cm)</label>
-                    <input type="number" id="setting-height" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">起點體重 (kg)</label>
-                    <input type="number" step="0.1" id="setting-start-weight" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">目標體重 (kg)</label>
-                    <input type="number" step="0.1" id="setting-target-weight" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">每日目標 (kcal)</label>
-                    <input type="number" id="setting-target-cal" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-        </div>
-
-        <!-- API Key & Proxy Settings -->
-        <div class="space-y-3 pt-2 border-t border-slate-100">
-            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Gemini API 與模型設定</h4>
-            
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key (支援填入多個 Key 輪換)</label>
-                <input type="password" id="setting-api-key" placeholder="貼上 API Key (用逗號分隔 AIzaSy1..., AIzaSy2...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                <p class="text-[10px] text-slate-500 mt-1">
-                    💡 填入多個 Key（用 `,` 分隔），當某個 Key 限額時系統會自動嘗試下一個備用 Key。
-                </p>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini 模型選擇</label>
-                <div class="flex gap-2">
-                    <select id="setting-model-select" class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                        <option value="auto">🤖 自動最佳化 (Auto-Fallback)</option>
-                        <option value="gemini-2.5-flash">gemini-2.5-flash (推薦)</option>
-                        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (最新輕量)</option>
-                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                    </select>
-                    <button id="btn-detect-models" onclick="detectAvailableModels()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold whitespace-nowrap transition">
-                        🔍 檢測 Key 可用模型
-                    </button>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">API 代理位址 (Custom Proxy URL)</label>
-                <input type="text" id="setting-api-proxy" placeholder="留空使用官方域名，或填寫 Cloudflare Worker 代理位址" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                <p class="text-[10px] text-amber-600 mt-1">
-                    💡 <b>香港/受限地區用戶提示：</b> 若遇到 Location Not Supported，請開啟 VPN 或填入 Cloudflare Worker 代理。
-                </p>
-            </div>
-        </div>
-
-        <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            <button onclick="saveSettings()" class="w-full py-2.5 gradient-emerald text-white font-bold rounded-xl text-xs transition shadow">
-                儲存設定
-            </button>
-            <button onclick="resetAllData()" class="w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-medium rounded-xl text-xs transition">
-                重置所有資料並重新開始
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Custom Toast Notification System (replaces standard alert)
-    function showToast(message, type = 'info') {
-        let container = document.getElementById('toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none';
-            document.body.appendChild(container);
+    <script>
+        // Safe DOM setter helper
+        function safeSetText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
         }
 
-        const toast = document.createElement('div');
-        const bgColor = type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-800';
-        toast.className = `${bgColor} text-white text-xs font-semibold p-3.5 rounded-xl shadow-lg border border-white/10 transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto flex items-start justify-between gap-2`;
-        
-        toast.innerHTML = `
-            <div class="flex-1 whitespace-pre-line leading-relaxed">${message}</div>
-            <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white text-sm font-bold">✕</button>
-        `;
-
-        container.appendChild(toast);
-
-        setTimeout(() => {
-            toast.classList.remove('translate-y-[-10px]', 'opacity-0');
-        }, 10);
-
-        setTimeout(() => {
-            toast.classList.add('opacity-0', 'translate-y-[-10px]');
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-    }
-
-    // Safe DOM helper
-    function safeSetText(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = text;
-    }
-
-    function safeSetVal(id, val) {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-    }
-
-    function getTodayStr() {
-        const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    function getCurrentTimeStr() {
-        const d = new Date();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    }
-
-    // Tab Navigation Function
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        const targetTab = document.getElementById('tab-' + tabId);
-        if (targetTab) targetTab.classList.remove('hidden');
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'font-semibold');
-            btn.classList.add('text-slate-600', 'font-medium');
-        });
-
-        const activeNav = document.getElementById('nav-' + tabId);
-        if (activeNav) {
-            activeNav.classList.add('bg-emerald-50', 'text-emerald-600', 'font-semibold');
-            activeNav.classList.remove('text-slate-600', 'font-medium');
+        function safeSetVal(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
         }
-    }
 
-    // Safe Lucide icon renderer
-    function renderIcons() {
-        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        function getTodayStr() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getCurrentTimeStr() {
+            const d = new Date();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // Tab Navigation Function
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'font-semibold');
+                btn.classList.add('text-slate-600', 'font-medium');
+            });
+
+            const activeNav = document.getElementById('nav-' + tabId);
+            if (activeNav) {
+                activeNav.classList.add('bg-emerald-50', 'text-emerald-600', 'font-semibold');
+                activeNav.classList.remove('text-slate-600', 'font-medium');
+            }
+        }
+
+        // Safe Lucide icon renderer
+        function renderIcons() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.warn("Lucide icons render warning:", e);
+                }
+            }
+        }
+
+        let selectedDashboardDate = getTodayStr();
+
+        // App State
+        let appState = {
+            heightCm: 163,
+            startWeight: 69.0,
+            currentWeight: 69.0,
+            targetWeight: 60.0,
+            dailyTargetCal: 1450,
+            dailyWaterGoal: 2000,
+            waterLogs: {},
+            apiKey: '',
+            apiProxyUrl: '',
+            mealsList: [],
+            workoutsList: [],
+            weightData: [
+                { date: getTodayStr(), weight: 69.0 }
+            ],
+            chatHistory: [
+                {
+                    sender: 'ai',
+                    text: '你好！我是你的專屬減肥營養師。我會陪你將體重由 69 kg 平穩減到 60 kg！有任何飲食或運動問題，隨時問我啦！💪'
+                }
+            ]
+        };
+
+        let editingMealId = null;
+        let editingWorkoutId = null;
+        let currentAnalyzedMeal = null;
+        let selectedBase64Image = null;
+        let weightChart = null;
+
+        // Dynamic API URL Generator
+        function getGeminiEndpoint(path) {
+            let baseUrl = (appState.apiProxyUrl && appState.apiProxyUrl.trim()) 
+                ? appState.apiProxyUrl.trim().replace(/\/+$/, '') 
+                : 'https://generativelanguage.googleapis.com';
+            return `${baseUrl}${path}?key=${appState.apiKey}`;
+        }
+
+        // Handle Location Not Supported Error
+        function handleLocationError(errMessage) {
+            if (errMessage && (errMessage.includes("location is not supported") || errMessage.includes("FAILED_PRECONDITION"))) {
+                alert("⚠️ 地區限制錯誤 (User Location Not Supported)\n\nGoogle Gemini API 目前限制香港及部分地區直接連線。\n\n【解決方法】\n1. 開啟 VPN 並切換至台灣/日本/新加坡/美國。\n2. 或在右上角「設定」中，填入免費搭建的 Cloudflare Worker 代理網址 (Custom Proxy URL)。");
+                return true;
+            }
+            return false;
+        }
+
+        window.onload = function() {
+            loadFromLocalStorage();
+            initDashboardDate();
+            renderIcons();
+            initChart();
+            renderAll();
+        };
+
+        function initDashboardDate() {
+            safeSetVal('dash-date-picker', selectedDashboardDate);
+            updateTodayTag();
+        }
+
+        function updateTodayTag() {
+            const tag = document.getElementById('today-tag');
+            if (tag) {
+                if (selectedDashboardDate === getTodayStr()) {
+                    tag.classList.remove('hidden');
+                } else {
+                    tag.classList.add('hidden');
+                }
+            }
+        }
+
+        function changeDashboardDate(newDate) {
+            if (!newDate) return;
+            selectedDashboardDate = newDate;
+            updateTodayTag();
+            renderAll();
+        }
+
+        function shiftDashboardDate(days) {
+            const current = new Date(selectedDashboardDate);
+            current.setDate(current.getDate() + days);
+            const year = current.getFullYear();
+            const month = String(current.getMonth() + 1).padStart(2, '0');
+            const day = String(current.getDate()).padStart(2, '0');
+            selectedDashboardDate = `${year}-${month}-${day}`;
+            safeSetVal('dash-date-picker', selectedDashboardDate);
+            updateTodayTag();
+            renderAll();
+        }
+
+        function resetDashboardToToday() {
+            selectedDashboardDate = getTodayStr();
+            safeSetVal('dash-date-picker', selectedDashboardDate);
+            updateTodayTag();
+            renderAll();
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('ai_diet_app_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState = { ...appState, ...parsed };
+
+                    if (!appState.waterLogs) appState.waterLogs = {};
+
+                    appState.mealsList = (appState.mealsList || []).map(m => ({
+                        ...m,
+                        date: m.date || getTodayStr(),
+                        time: m.time || '12:00'
+                    }));
+
+                    appState.workoutsList = (appState.workoutsList || []).map(w => ({
+                        ...w,
+                        date: w.date || getTodayStr(),
+                        time: w.time || '18:00'
+                    }));
+
+                } catch(e) {
+                    console.error("Failed to parse saved state", e);
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
             try {
-                lucide.createIcons();
-            } catch (e) {
-                console.warn("Lucide icons render warning:", e);
+                localStorage.setItem('ai_diet_app_state', JSON.stringify(appState));
+            } catch(e) {
+                console.error("Storage limit reached or error", e);
             }
         }
-    }
 
-    let selectedDashboardDate = getTodayStr();
-
-    // App State
-    let appState = {
-        heightCm: 163,
-        startWeight: 69.0,
-        currentWeight: 69.0,
-        targetWeight: 60.0,
-        dailyTargetCal: 1450,
-        dailyWaterGoal: 2000,
-        waterLogs: {},
-        apiKey: '',
-        apiProxyUrl: '',
-        selectedModel: 'auto',
-        mealsList: [],
-        workoutsList: [],
-        weightData: [
-            { date: getTodayStr(), weight: 69.0 }
-        ],
-        chatHistory: [
-            {
-                sender: 'ai',
-                text: '你好！我是你的專屬減肥營養師。我會陪你將體重由 69 kg 平穩減到 60 kg！有任何飲食或運動問題，隨時問我啦！💪'
-            }
-        ]
-    };
-
-    let editingMealId = null;
-    let editingWorkoutId = null;
-    let currentAnalyzedMeal = null;
-    let selectedBase64Image = null;
-    let weightChart = null;
-
-    // Standard Gemini Models for Automatic Fallback Loop
-    const GEMINI_MODELS = [
-        'gemini-2.5-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro'
-    ];
-
-    // Get array of API Keys (Support multiple comma-separated keys for rate-limit rotation)
-    function getApiKeysList() {
-        if (!appState.apiKey) return [];
-        return appState.apiKey.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
-    }
-
-    // Dynamic API URL Generator
-    function getGeminiEndpoint(modelName, key) {
-        let baseUrl = (appState.apiProxyUrl && appState.apiProxyUrl.trim()) 
-            ? appState.apiProxyUrl.trim().replace(/\/+$/, '') 
-            : 'https://generativelanguage.googleapis.com';
-        return `${baseUrl}/v1beta/models/${modelName}:generateContent?key=${key}`;
-    }
-
-    // Handle Location Not Supported Error
-    function handleLocationError(errMessage) {
-        if (errMessage && (errMessage.includes("location is not supported") || errMessage.includes("FAILED_PRECONDITION"))) {
-            showToast("⚠️ 地區限制錯誤 (User Location Not Supported)\n\nGoogle Gemini API 限制部分地區直連。\n【解決方法】\n1. 開啟 VPN 並轉至台灣/日本/美國。\n2. 或在「設定」中填寫 Cloudflare Worker 代理位址。", "error");
-            return true;
+        function renderAll() {
+            updateProfileHeaderUI();
+            renderMealsUI();
+            renderWorkoutsUI();
+            updateProgressUI();
+            renderWeightTable();
+            renderChatUI();
         }
-        return false;
-    }
 
-    // Detect Available Models for user API Key
-    async function detectAvailableModels() {
-        const keysList = getApiKeysList();
-        if (keysList.length === 0) {
-            showToast("請先填入 Gemini API Key！", "error");
-            return;
+        function updateProfileHeaderUI() {
+            safeSetText('header-profile-text', `${appState.heightCm}cm | ${appState.currentWeight.toFixed(1)}kg`);
+            safeSetText('header-goal-subtitle', `${appState.targetWeight.toFixed(1)}kg 瘦身計劃進行中`);
+            
+            safeSetText('sidebar-start-text', `起點: ${appState.startWeight.toFixed(1)} kg`);
+            safeSetText('sidebar-target-text', `目標: ${appState.targetWeight.toFixed(1)} kg`);
+            
+            safeSetText('weight-subtitle-text', `目前體重 ${appState.currentWeight.toFixed(1)} kg ➔ 目標體重 ${appState.targetWeight.toFixed(1)} kg`);
+            safeSetText('chat-profile-sub', `已載入目標: ${appState.heightCm}cm / ${appState.currentWeight.toFixed(1)}kg ➔ ${appState.targetWeight.toFixed(1)}kg`);
+
+            const bmi = (appState.currentWeight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
+            const targetBmi = (appState.targetWeight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
+            safeSetText('dash-bmi-text', bmi);
+            safeSetText('dash-target-bmi-text', `目標 BMI: ${targetBmi}`);
         }
-        const btn = document.getElementById('btn-detect-models');
-        if (btn) btn.innerText = "檢測中...";
 
-        let baseUrl = (appState.apiProxyUrl && appState.apiProxyUrl.trim()) 
-            ? appState.apiProxyUrl.trim().replace(/\/+$/, '') 
-            : 'https://generativelanguage.googleapis.com';
+        function renderMealsUI() {
+            const container = document.getElementById('meals-list-container');
+            const filteredMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
 
-        const url = `${baseUrl}/v1beta/models?key=${keysList[0]}`;
+            const totalCal = filteredMeals.reduce((s, m) => s + m.calories, 0);
+            const totalProtein = filteredMeals.reduce((s, m) => s + m.protein, 0);
 
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.error) {
-                showToast("檢測失敗：" + data.error.message, "error");
+            safeSetText('dash-cal-text', `${totalCal} / ${appState.dailyTargetCal}`);
+            safeSetText('dash-protein-text', `${totalProtein} / 75`);
+            safeSetText('meal-count-badge', `已記錄 ${filteredMeals.length} 餐`);
+
+            updateNetCalorieUI();
+
+            if (!container) return;
+
+            if (filteredMeals.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs space-y-2">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto">
+                            <i data-lucide="utensils" class="w-5 h-5"></i>
+                        </div>
+                        <p>該日 (${selectedDashboardDate}) 尚未記錄飲食</p>
+                        <button onclick="switchTab('analyzer')" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 font-semibold rounded-lg text-xs hover:bg-emerald-100 transition">
+                            影相記錄餐點
+                        </button>
+                    </div>
+                `;
+                renderIcons();
                 return;
             }
-            if (data.models && Array.isArray(data.models)) {
-                const available = data.models
-                    .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-                    .map(m => m.name.replace('models/', ''));
-                
-                if (available.length > 0) {
-                    showToast(`✅ 檢測成功！你的 Key 可用模型：\n${available.slice(0, 4).join(', ')}\n已自動設為最佳模型：${available[0]}`, "success");
-                    appState.selectedModel = available[0];
-                    safeSetVal('setting-model-select', available[0]);
-                    saveToLocalStorage();
-                } else {
-                    showToast("未找到支援內容生成的 Gemini 模型。", "error");
-                }
-            }
-        } catch (e) {
-            showToast("連線檢測發生錯誤：" + e.message, "error");
-        } finally {
-            if (btn) btn.innerText = "🔍 檢測 Key 可用模型";
-        }
-    }
 
-    // Smart API Request Handler with Multi-Key Rotation & Model Fallback
-    async function fetchGeminiWithFallback(requestBody) {
-        const keysList = getApiKeysList();
-        if (keysList.length === 0) {
-            throw new Error("請先在「設定」中填入 Gemini API Key！");
-        }
-
-        let lastErrorMsg = '';
-
-        // Order candidate models
-        let candidateModels = [...GEMINI_MODELS];
-        if (appState.selectedModel && appState.selectedModel !== 'auto') {
-            candidateModels = [appState.selectedModel, ...GEMINI_MODELS.filter(m => m !== appState.selectedModel)];
-        }
-
-        // Loop through all keys
-        for (let kIdx = 0; kIdx < keysList.length; kIdx++) {
-            const currentKey = keysList[kIdx];
-
-            // Loop through model candidates
-            for (let mIdx = 0; mIdx < candidateModels.length; mIdx++) {
-                const model = candidateModels[mIdx];
-                const apiUrl = getGeminiEndpoint(model, currentKey);
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody)
-                    });
-
-                    const data = await response.json();
-
-                    if (data.error) {
-                        const msg = data.error.message || JSON.stringify(data.error);
-                        lastErrorMsg = msg;
-
-                        if (handleLocationError(msg)) {
-                            throw new Error(msg);
-                        }
-
-                        // If Model Not Found (404), gracefully fall back to NEXT model candidate
-                        if (response.status === 404 || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("not supported")) {
-                            console.warn(`Model [${model}] returned 404 / Not Found. Trying fallback model...`);
-                            continue; // Continue loop to next model!
-                        }
-
-                        // Rate Limit / Quota Exceeded / High Demand
-                        if (msg.toLowerCase().includes("quota") || 
-                            msg.toLowerCase().includes("resource_exhausted") || 
-                            msg.toLowerCase().includes("high demand") || 
-                            msg.toLowerCase().includes("overloaded") || 
-                            response.status === 429 || response.status === 503) {
-                            console.warn(`Key #${kIdx+1} hit rate limit on ${model}. Rotating...`);
-                            if (keysList.length > 1) {
-                                break; // Switch to next API Key
-                            }
-                            await new Promise(r => setTimeout(r, 1000));
-                            continue;
-                        }
-
-                        console.warn(`Error on ${model}: ${msg}. Trying next model...`);
-                        continue;
-                    }
-
-                    // Success! Return API response
-                    return data;
-
-                } catch (err) {
-                    lastErrorMsg = err.message || 'API Request Failed';
-                    if (lastErrorMsg.includes("location is not supported")) {
-                        throw err;
-                    }
-                }
-            }
-        }
-
-        if (lastErrorMsg.toLowerCase().includes("not found") || lastErrorMsg.toLowerCase().includes("not supported")) {
-            throw new Error(`⚠️ 模型存取失敗 (404 Not Found)。\n建議在右上角「設定」點擊「🔍 檢測 Key 可用模型」自動匹配可用的 Gemini 模型。`);
-        }
-
-        if (lastErrorMsg.toLowerCase().includes("quota") || 
-            lastErrorMsg.toLowerCase().includes("resource_exhausted") || 
-            lastErrorMsg.toLowerCase().includes("429")) {
-            throw new Error("⚠️ 已達到 Google API 使用上限 (Quota Exceeded)。請稍等 1 分鐘或在設定中填入多個 Key 輪換！");
-        }
-
-        throw new Error(lastErrorMsg || "請求失敗，請稍後再試。");
-    }
-
-    window.onload = function() {
-        loadFromLocalStorage();
-        initDashboardDate();
-        renderIcons();
-        initChart();
-        renderAll();
-    };
-
-    function initDashboardDate() {
-        safeSetVal('dash-date-picker', selectedDashboardDate);
-        updateTodayTag();
-    }
-
-    function updateTodayTag() {
-        const tag = document.getElementById('today-tag');
-        if (tag) {
-            if (selectedDashboardDate === getTodayStr()) {
-                tag.classList.remove('hidden');
-            } else {
-                tag.classList.add('hidden');
-            }
-        }
-    }
-
-    function changeDashboardDate(newDate) {
-        if (!newDate) return;
-        selectedDashboardDate = newDate;
-        updateTodayTag();
-        renderAll();
-    }
-
-    function shiftDashboardDate(days) {
-        const current = new Date(selectedDashboardDate);
-        current.setDate(current.getDate() + days);
-        const year = current.getFullYear();
-        const month = String(current.getMonth() + 1).padStart(2, '0');
-        const day = String(current.getDate()).padStart(2, '0');
-        selectedDashboardDate = `${year}-${month}-${day}`;
-        safeSetVal('dash-date-picker', selectedDashboardDate);
-        updateTodayTag();
-        renderAll();
-    }
-
-    function resetDashboardToToday() {
-        selectedDashboardDate = getTodayStr();
-        safeSetVal('dash-date-picker', selectedDashboardDate);
-        updateTodayTag();
-        renderAll();
-    }
-
-    function loadFromLocalStorage() {
-        const saved = localStorage.getItem('ai_diet_app_state');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                appState = { ...appState, ...parsed };
-
-                if (!appState.waterLogs) appState.waterLogs = {};
-
-                appState.mealsList = (appState.mealsList || []).map(m => ({
-                    ...m,
-                    date: m.date || getTodayStr(),
-                    time: m.time || '12:00'
-                }));
-
-                appState.workoutsList = (appState.workoutsList || []).map(w => ({
-                    ...w,
-                    date: w.date || getTodayStr(),
-                    time: w.time || '18:00'
-                }));
-
-            } catch(e) {
-                console.error("Failed to parse saved state", e);
-            }
-        }
-    }
-
-    function saveToLocalStorage() {
-        try {
-            localStorage.setItem('ai_diet_app_state', JSON.stringify(appState));
-        } catch(e) {
-            console.error("Storage limit reached or error", e);
-        }
-    }
-
-    function renderAll() {
-        updateProfileHeaderUI();
-        renderMealsUI();
-        renderWorkoutsUI();
-        updateProgressUI();
-        renderWeightTable();
-        renderChatUI();
-    }
-
-    function updateProfileHeaderUI() {
-        safeSetText('header-profile-text', `${appState.heightCm}cm | ${appState.currentWeight.toFixed(1)}kg`);
-        safeSetText('header-goal-subtitle', `${appState.targetWeight.toFixed(1)}kg 瘦身計劃進行中`);
-        
-        safeSetText('sidebar-start-text', `起點: ${appState.startWeight.toFixed(1)} kg`);
-        safeSetText('sidebar-target-text', `目標: ${appState.targetWeight.toFixed(1)} kg`);
-        
-        safeSetText('weight-subtitle-text', `目前體重 ${appState.currentWeight.toFixed(1)} kg ➔ 目標體重 ${appState.targetWeight.toFixed(1)} kg`);
-        safeSetText('chat-profile-sub', `已載入目標: ${appState.heightCm}cm / ${appState.currentWeight.toFixed(1)}kg ➔ ${appState.targetWeight.toFixed(1)}kg`);
-
-        const bmi = (appState.currentWeight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
-        const targetBmi = (appState.targetWeight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
-        safeSetText('dash-bmi-text', bmi);
-        safeSetText('dash-target-bmi-text', `目標 BMI: ${targetBmi}`);
-    }
-
-    function renderMealsUI() {
-        const container = document.getElementById('meals-list-container');
-        const filteredMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
-
-        const totalCal = filteredMeals.reduce((s, m) => s + m.calories, 0);
-        const totalProtein = filteredMeals.reduce((s, m) => s + m.protein, 0);
-
-        safeSetText('dash-cal-text', `${totalCal} / ${appState.dailyTargetCal}`);
-        safeSetText('dash-protein-text', `${totalProtein} / 75`);
-        safeSetText('meal-count-badge', `已記錄 ${filteredMeals.length} 餐`);
-
-        updateNetCalorieUI();
-
-        if (!container) return;
-
-        if (filteredMeals.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8 text-slate-400 text-xs space-y-2">
-                    <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto">
-                        <i data-lucide="utensils" class="w-5 h-5"></i>
+            container.innerHTML = '';
+            filteredMeals.forEach(m => {
+                const item = document.createElement('div');
+                item.className = "p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition flex items-center justify-between gap-3";
+                item.innerHTML = `
+                    <div class="flex gap-3 items-center min-w-0 flex-1">
+                        <div class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden flex-shrink-0 relative">
+                            <img src="${m.imgSrc}" alt="${m.title}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[9px] font-bold px-1 rounded-tl">${m.score}分</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-semibold">${m.mealType}</span>
+                                <h4 class="font-bold text-slate-800 text-xs truncate">${m.title}</h4>
+                            </div>
+                            <div class="flex gap-2 text-[10px] text-slate-600 mt-1 font-medium">
+                                <span>🔥 ${m.calories} kcal</span>
+                                <span>🥩 蛋白質 ${m.protein}g</span>
+                            </div>
+                        </div>
                     </div>
-                    <p>該日 (${selectedDashboardDate}) 尚未記錄飲食</p>
-                    <button onclick="switchTab('analyzer')" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 font-semibold rounded-lg text-xs hover:bg-emerald-100 transition">
-                        影相記錄餐點
-                    </button>
-                </div>
-            `;
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <span class="text-[10px] text-slate-400 font-medium">${m.time}</span>
+                        <button onclick="openEditMealModal(${m.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg transition" title="修改時間/內容">
+                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteMeal(${m.id})" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition" title="刪除">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
             renderIcons();
-            return;
         }
 
-        container.innerHTML = '';
-        filteredMeals.forEach(m => {
-            const item = document.createElement('div');
-            item.className = "p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition flex items-center justify-between gap-3";
-            item.innerHTML = `
-                <div class="flex gap-3 items-center min-w-0 flex-1">
-                    <div class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden flex-shrink-0 relative">
-                        <img src="${m.imgSrc}" alt="${m.title}" class="w-full h-full object-cover">
-                        <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[9px] font-bold px-1 rounded-tl">${m.score}分</span>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-semibold">${m.mealType}</span>
-                            <h4 class="font-bold text-slate-800 text-xs truncate">${m.title}</h4>
+        function deleteMeal(id) {
+            appState.mealsList = appState.mealsList.filter(m => m.id !== id);
+            saveToLocalStorage();
+            renderMealsUI();
+        }
+
+        function renderWorkoutsUI() {
+            const container = document.getElementById('workouts-list-container');
+            const filteredWorkouts = appState.workoutsList.filter(w => w.date === selectedDashboardDate);
+
+            if (!container) return;
+
+            if (filteredWorkouts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs space-y-2">
+                        <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-400 flex items-center justify-center mx-auto">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
                         </div>
-                        <div class="flex gap-2 text-[10px] text-slate-600 mt-1 font-medium">
-                            <span>🔥 ${m.calories} kcal</span>
-                            <span>🥩 蛋白質 ${m.protein}g</span>
+                        <p>該日 (${selectedDashboardDate}) 尚未記錄運動</p>
+                        <button onclick="openWorkoutModal()" class="px-3 py-1.5 bg-rose-50 text-rose-600 font-semibold rounded-lg text-xs hover:bg-rose-100 transition">
+                            記錄羽毛球或運動
+                        </button>
+                    </div>
+                `;
+                renderIcons();
+                updateNetCalorieUI();
+                return;
+            }
+
+            container.innerHTML = '';
+            filteredWorkouts.forEach(w => {
+                const item = document.createElement('div');
+                item.className = "p-3 rounded-xl border border-rose-100 bg-rose-50/40 hover:bg-rose-50 transition flex items-center justify-between gap-3";
+                item.innerHTML = `
+                    <div class="flex gap-3 items-center min-w-0 flex-1">
+                        <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base flex-shrink-0">
+                            🏃
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-slate-800 text-xs truncate">${w.type} (${w.duration}分鐘)</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5 truncate">${w.note || 'Apple Watch 數據'}</p>
                         </div>
                     </div>
-                </div>
-                <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <span class="text-[10px] text-slate-400 font-medium">${m.time}</span>
-                    <button onclick="openEditMealModal(${m.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg transition" title="修改時間/內容">
-                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <button onclick="deleteMeal(${m.id})" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition" title="刪除">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(item);
-        });
-        renderIcons();
-    }
-
-    function deleteMeal(id) {
-        appState.mealsList = appState.mealsList.filter(m => m.id !== id);
-        saveToLocalStorage();
-        renderMealsUI();
-        showToast("已刪除該筆飲食記錄", "info");
-    }
-
-    function renderWorkoutsUI() {
-        const container = document.getElementById('workouts-list-container');
-        const filteredWorkouts = appState.workoutsList.filter(w => w.date === selectedDashboardDate);
-
-        if (!container) return;
-
-        if (filteredWorkouts.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8 text-slate-400 text-xs space-y-2">
-                    <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-400 flex items-center justify-center mx-auto">
-                        <i data-lucide="activity" class="w-5 h-5"></i>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <div class="text-right">
+                            <div class="font-extrabold text-rose-600 text-xs">- ${w.calories} kcal</div>
+                            <div class="text-[9px] text-slate-400 font-medium">${w.time}</div>
+                        </div>
+                        <button onclick="openWorkoutModal(${w.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="修改時間/內容">
+                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteWorkout(${w.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="刪除">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
                     </div>
-                    <p>該日 (${selectedDashboardDate}) 尚未記錄運動</p>
-                    <button onclick="openWorkoutModal()" class="px-3 py-1.5 bg-rose-50 text-rose-600 font-semibold rounded-lg text-xs hover:bg-rose-100 transition">
-                        記錄羽毛球或運動
-                    </button>
-                </div>
-            `;
+                `;
+                container.appendChild(item);
+            });
             renderIcons();
             updateNetCalorieUI();
-            return;
         }
 
-        container.innerHTML = '';
-        filteredWorkouts.forEach(w => {
-            const item = document.createElement('div');
-            item.className = "p-3 rounded-xl border border-rose-100 bg-rose-50/40 hover:bg-rose-50 transition flex items-center justify-between gap-3";
-            item.innerHTML = `
-                <div class="flex gap-3 items-center min-w-0 flex-1">
-                    <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base flex-shrink-0">
-                        🏃
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <h4 class="font-bold text-slate-800 text-xs truncate">${w.type} (${w.duration}分鐘)</h4>
-                        <p class="text-[10px] text-slate-500 mt-0.5 truncate">${w.note || 'Apple Watch 數據'}</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <div class="text-right">
-                        <div class="font-extrabold text-rose-600 text-xs">- ${w.calories} kcal</div>
-                        <div class="text-[9px] text-slate-400 font-medium">${w.time}</div>
-                    </div>
-                    <button onclick="openWorkoutModal(${w.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="修改時間/內容">
-                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <button onclick="deleteWorkout(${w.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition" title="刪除">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(item);
-        });
-        renderIcons();
-        updateNetCalorieUI();
-    }
+        function deleteWorkout(id) {
+            appState.workoutsList = appState.workoutsList.filter(w => w.id !== id);
+            saveToLocalStorage();
+            renderWorkoutsUI();
+        }
 
-    function deleteWorkout(id) {
-        appState.workoutsList = appState.workoutsList.filter(w => w.id !== id);
-        saveToLocalStorage();
-        renderWorkoutsUI();
-        showToast("已刪除該筆運動記錄", "info");
-    }
+        function updateNetCalorieUI() {
+            const filteredWorkouts = appState.workoutsList.filter(w => w.date === selectedDashboardDate);
+            const filteredMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
 
-    function updateNetCalorieUI() {
-        const filteredWorkouts = appState.workoutsList.filter(w => w.date === selectedDashboardDate);
-        const filteredMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
+            const burnedCal = filteredWorkouts.reduce((s, w) => s + w.calories, 0);
+            const foodCal = filteredMeals.reduce((s, m) => s + m.calories, 0);
+            const netCal = foodCal - burnedCal;
 
-        const burnedCal = filteredWorkouts.reduce((s, w) => s + w.calories, 0);
-        const foodCal = filteredMeals.reduce((s, m) => s + m.calories, 0);
-        const netCal = foodCal - burnedCal;
+            const currentWater = appState.waterLogs[selectedDashboardDate] || 0;
 
-        const currentWater = appState.waterLogs[selectedDashboardDate] || 0;
+            safeSetText('dash-burn-text', `${burnedCal} kcal`);
+            safeSetText('dash-water-text', `${currentWater} / ${appState.dailyWaterGoal}`);
 
-        safeSetText('dash-burn-text', `${burnedCal} kcal`);
-        safeSetText('dash-water-text', `${currentWater} / ${appState.dailyWaterGoal}`);
-
-        const netText = document.getElementById('net-calorie-text');
-        if (netText) {
-            if (netCal <= appState.dailyTargetCal) {
-                netText.className = "text-lg font-extrabold text-emerald-400";
-                netText.innerText = `${netCal} kcal (熱量赤字控制中 🔥)`;
-            } else {
-                netText.className = "text-lg font-extrabold text-amber-400";
-                netText.innerText = `${netCal} kcal (熱量稍超標)`;
+            const netText = document.getElementById('net-calorie-text');
+            if (netText) {
+                if (netCal <= appState.dailyTargetCal) {
+                    netText.className = "text-lg font-extrabold text-emerald-400";
+                    netText.innerText = `${netCal} kcal (熱量赤字控制中 🔥)`;
+                } else {
+                    netText.className = "text-lg font-extrabold text-amber-400";
+                    netText.innerText = `${netCal} kcal (熱量稍超標)`;
+                }
             }
         }
-    }
 
-    function addWater(amount) {
-        if (!appState.waterLogs[selectedDashboardDate]) {
-            appState.waterLogs[selectedDashboardDate] = 0;
-        }
-        appState.waterLogs[selectedDashboardDate] += amount;
-        saveToLocalStorage();
-        updateNetCalorieUI();
-        showToast(`已成功記錄飲水 +${amount}ml 💧`, "success");
-    }
-
-    function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            selectedBase64Image = evt.target.result;
-            const preview = document.getElementById('image-preview');
-            if (preview) preview.src = selectedBase64Image;
-            
-            const promptEl = document.getElementById('upload-prompt');
-            const previewContainer = document.getElementById('image-preview-container');
-            if (promptEl) promptEl.classList.add('hidden');
-            if (previewContainer) previewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    async function analyzeMealImage() {
-        if (!selectedBase64Image) {
-            showToast('請先上傳或拍攝餐點相片！', 'error');
-            return;
+        function addWater(amount) {
+            if (!appState.waterLogs[selectedDashboardDate]) {
+                appState.waterLogs[selectedDashboardDate] = 0;
+            }
+            appState.waterLogs[selectedDashboardDate] += amount;
+            saveToLocalStorage();
+            updateNetCalorieUI();
         }
 
-        const btn = document.getElementById('analyze-btn');
-        if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> AI 視覺分析中 (自動適應最佳線路)...`;
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        const mealType = document.getElementById('meal-type')?.value || '午餐';
-        const mealNotes = document.getElementById('meal-notes')?.value.trim() || '無額外說明';
-
-        if (!appState.apiKey) {
-            showToast('請先點擊右上角「設定」填入你的 Gemini API Key！', 'error');
-            if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
-            openSettingsModal();
-            return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                selectedBase64Image = evt.target.result;
+                const preview = document.getElementById('image-preview');
+                if (preview) preview.src = selectedBase64Image;
+                
+                const promptEl = document.getElementById('upload-prompt');
+                const previewContainer = document.getElementById('image-preview-container');
+                if (promptEl) promptEl.classList.add('hidden');
+                if (previewContainer) previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
         }
 
-        try {
-            const match = selectedBase64Image.match(/^data:(image\/\w+);base64,(.+)$/);
-            const mimeType = match ? match[1] : 'image/jpeg';
-            const base64Data = match ? match[2] : selectedBase64Image.replace(/^data:image\/\w+;base64,/, '');
+        async function analyzeMealImage() {
+            if (!selectedBase64Image) {
+                alert('請先上傳相片！');
+                return;
+            }
 
-            const promptText = `你是一位專業香港廣東話減肥營養師。
+            const btn = document.getElementById('analyze-btn');
+            if (btn) btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> AI 視覺分析中，請稍候...`;
 
+            const mealType = document.getElementById('meal-type')?.value || '午餐';
+            const mealNotes = document.getElementById('meal-notes')?.value.trim() || '無額外說明';
+
+            if (!appState.apiKey) {
+                alert('請先點擊右上角「設定」填入你的 Gemini API Key，才能啟用 AI 相片食物辨識功能！');
+                if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
+                openSettingsModal();
+                return;
+            }
+
+            try {
+                const match = selectedBase64Image.match(/^data:(image\/\w+);base64,(.+)$/);
+                const mimeType = match ? match[1] : 'image/jpeg';
+                const base64Data = match ? match[2] : selectedBase64Image.replace(/^data:image\/\w+;base64,/, '');
+
+                const promptText = `你是一位專業香港廣東話減肥營養師。
 用戶資料：身高 ${appState.heightCm}cm，目前體重 ${appState.currentWeight}kg，目標體重 ${appState.targetWeight}kg（每日熱量赤字目標：${appState.dailyTargetCal} kcal）。
 這是一張用戶【${mealType}】的餐點相片。
 用戶補充說明：${mealNotes}。
 
 請仔細辨識圖片中的食材、份量與烹調方式（特別注意港式/外賣常見油份與醬汁），估算卡路里與三大營養素，並根據其減肥目標給予 1-10 分的健康減肥評分。
 
-請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何 Markdown 格式標籤）：
+請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何額外說明）：
 {
   "title": "精準辨識食物名稱 (例如: 港式切雞飯少汁配焯菜)",
   "score": 8.0,
@@ -1297,175 +1112,199 @@
   "suggestions": "減肥改善建議（廣東話，如少油、改配冰無糖茶、飯量減少等）"
 }`;
 
-            const requestBody = {
-                contents: [
-                    {
-                        parts: [
-                            { text: promptText },
+                const apiUrl = getGeminiEndpoint('/v1beta/models/gemini-2.5-flash:generateContent');
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [
                             {
-                                inlineData: {
-                                    mimeType: mimeType,
-                                    data: base64Data
-                                }
+                                parts: [
+                                    { text: promptText },
+                                    {
+                                        inlineData: {
+                                            mimeType: mimeType,
+                                            data: base64Data
+                                        }
+                                    }
+                                ]
                             }
                         ]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    const errMsg = data.error.message || JSON.stringify(data.error);
+                    if (!handleLocationError(errMsg)) {
+                        throw new Error(errMsg);
                     }
-                ]
-            };
+                    return;
+                }
 
-            const data = await fetchGeminiWithFallback(requestBody);
+                let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-            let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const parsedResult = JSON.parse(rawText);
 
-            const parsedResult = JSON.parse(rawText);
+                currentAnalyzedMeal = {
+                    title: parsedResult.title || '餐點分析',
+                    mealType: mealType,
+                    score: parsedResult.score || 7.0,
+                    calories: parseInt(parsedResult.calories) || 450,
+                    protein: parseInt(parsedResult.protein) || 20,
+                    carbs: parseInt(parsedResult.carbs) || 50,
+                    fats: parseInt(parsedResult.fats) || 15,
+                    pros: parsedResult.pros || '這餐包含基礎營養。',
+                    suggestions: parsedResult.suggestions || '注意份量與油脂攝取。',
+                    imgSrc: selectedBase64Image
+                };
 
-            currentAnalyzedMeal = {
-                title: parsedResult.title || '餐點分析',
-                mealType: mealType,
-                score: parsedResult.score || 7.0,
-                calories: parseInt(parsedResult.calories) || 450,
-                protein: parseInt(parsedResult.protein) || 20,
-                carbs: parseInt(parsedResult.carbs) || 50,
-                fats: parseInt(parsedResult.fats) || 15,
-                pros: parsedResult.pros || '這餐包含基礎營養。',
-                suggestions: parsedResult.suggestions || '注意份量與油脂攝取。',
-                imgSrc: selectedBase64Image
-            };
+                safeSetText('res-meal-type', currentAnalyzedMeal.mealType);
+                safeSetText('res-title', currentAnalyzedMeal.title);
+                safeSetText('res-score', `${currentAnalyzedMeal.score} / 10`);
+                safeSetText('res-cal', `${currentAnalyzedMeal.calories} kcal`);
+                safeSetText('res-protein', `${currentAnalyzedMeal.protein}g`);
+                safeSetText('res-carbs', `${currentAnalyzedMeal.carbs}g`);
+                safeSetText('res-fats', `${currentAnalyzedMeal.fats}g`);
+                safeSetText('res-pros', currentAnalyzedMeal.pros);
+                safeSetText('res-suggestions', currentAnalyzedMeal.suggestions);
 
-            safeSetText('res-meal-type', currentAnalyzedMeal.mealType);
-            safeSetText('res-title', currentAnalyzedMeal.title);
-            safeSetText('res-score', `${currentAnalyzedMeal.score} / 10`);
-            safeSetText('res-cal', `${currentAnalyzedMeal.calories} kcal`);
-            safeSetText('res-protein', `${currentAnalyzedMeal.protein}g`);
-            safeSetText('res-carbs', `${currentAnalyzedMeal.carbs}g`);
-            safeSetText('res-fats', `${currentAnalyzedMeal.fats}g`);
-            safeSetText('res-pros', currentAnalyzedMeal.pros);
-            safeSetText('res-suggestions', currentAnalyzedMeal.suggestions);
+                const resCard = document.getElementById('analysis-result-card');
+                if (resCard) resCard.classList.remove('hidden');
 
-            const resCard = document.getElementById('analysis-result-card');
-            if (resCard) resCard.classList.remove('hidden');
-            showToast("AI 相片評估完成！", "success");
-
-        } catch (err) {
-            console.error("Meal Analysis Error:", err);
-            showToast("相片分析失敗：" + (err.message || "請檢查 API Key 或網絡連線。"), "error");
-        } finally {
-            if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
-            renderIcons();
-        }
-    }
-
-    function saveMealToLog() {
-        if (!currentAnalyzedMeal) return;
-
-        const newMeal = {
-            id: Date.now(),
-            ...currentAnalyzedMeal,
-            date: selectedDashboardDate,
-            time: getCurrentTimeStr()
-        };
-
-        appState.mealsList.unshift(newMeal);
-        saveToLocalStorage();
-        renderMealsUI();
-        showToast("已成功儲存至飲食記錄！", "success");
-        switchTab('dashboard');
-    }
-
-    function openEditMealModal(id) {
-        const meal = appState.mealsList.find(m => m.id === id);
-        if (!meal) return;
-
-        editingMealId = id;
-        safeSetVal('edit-meal-date', meal.date || selectedDashboardDate);
-        safeSetVal('edit-meal-time', meal.time || '12:00');
-        safeSetVal('edit-meal-title', meal.title || '');
-        safeSetVal('edit-meal-type', meal.mealType || '午餐');
-        safeSetVal('edit-meal-cal', meal.calories || 0);
-        safeSetVal('edit-meal-protein', meal.protein || 0);
-
-        const modal = document.getElementById('edit-meal-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeEditMealModal() {
-        const modal = document.getElementById('edit-meal-modal');
-        if (modal) modal.classList.add('hidden');
-        editingMealId = null;
-    }
-
-    function saveEditMeal() {
-        if (!editingMealId) return;
-
-        const idx = appState.mealsList.findIndex(m => m.id === editingMealId);
-        if (idx === -1) return;
-
-        appState.mealsList[idx].date = document.getElementById('edit-meal-date')?.value || selectedDashboardDate;
-        appState.mealsList[idx].time = document.getElementById('edit-meal-time')?.value || getCurrentTimeStr();
-        appState.mealsList[idx].title = document.getElementById('edit-meal-title')?.value.trim() || '餐點';
-        appState.mealsList[idx].mealType = document.getElementById('edit-meal-type')?.value;
-        appState.mealsList[idx].calories = parseInt(document.getElementById('edit-meal-cal')?.value) || 0;
-        appState.mealsList[idx].protein = parseInt(document.getElementById('edit-meal-protein')?.value) || 0;
-
-        saveToLocalStorage();
-        renderMealsUI();
-        closeEditMealModal();
-        showToast("修改成功！", "success");
-    }
-
-    function openWorkoutModal(editId = null) {
-        editingWorkoutId = editId;
-
-        if (editId) {
-            const w = appState.workoutsList.find(item => item.id === editId);
-            if (w) {
-                safeSetText('workout-modal-title', "修改 Apple Watch 運動");
-                safeSetVal('workout-date-input', w.date || selectedDashboardDate);
-                safeSetVal('workout-time-input', w.time || getCurrentTimeStr());
-                safeSetVal('workout-type-input', w.type);
-                safeSetVal('workout-duration-input', w.duration);
-                safeSetVal('workout-cal-input', w.calories);
-                safeSetVal('workout-note-input', w.note || '');
+            } catch (err) {
+                console.error("Meal Analysis Error:", err);
+                if (!handleLocationError(err.message)) {
+                    alert("相片分析失敗：" + (err.message || "請檢查 API Key 或網絡連線。"));
+                }
+            } finally {
+                if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
+                lucide.createIcons();
             }
-        } else {
-            safeSetText('workout-modal-title', "記錄 Apple Watch 運動");
-            safeSetVal('workout-date-input', selectedDashboardDate);
-            safeSetVal('workout-time-input', getCurrentTimeStr());
-            safeSetVal('workout-type-input', "羽毛球 🏸");
-            safeSetVal('workout-duration-input', "60");
-            safeSetVal('workout-cal-input', "420");
-            safeSetVal('workout-note-input', "");
         }
 
-        const modal = document.getElementById('workout-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
+        function saveMealToLog() {
+            if (!currentAnalyzedMeal) return;
 
-    function closeWorkoutModal() {
-        const modal = document.getElementById('workout-modal');
-        if (modal) modal.classList.add('hidden');
-        editingWorkoutId = null;
-    }
+            const newMeal = {
+                id: Date.now(),
+                ...currentAnalyzedMeal,
+                date: selectedDashboardDate,
+                time: getCurrentTimeStr()
+            };
 
-    function saveWorkoutEntry() {
-        const date = document.getElementById('workout-date-input')?.value || selectedDashboardDate;
-        const time = document.getElementById('workout-time-input')?.value || getCurrentTimeStr();
-        const type = document.getElementById('workout-type-input')?.value || '羽毛球 🏸';
-        const duration = parseInt(document.getElementById('workout-duration-input')?.value) || 0;
-        const calories = parseInt(document.getElementById('workout-cal-input')?.value) || 0;
-        const note = document.getElementById('workout-note-input')?.value || '';
-
-        if (calories <= 0) {
-            showToast('請輸入有效的運動卡路里！', 'error');
-            return;
+            appState.mealsList.unshift(newMeal);
+            saveToLocalStorage();
+            renderMealsUI();
+            switchTab('dashboard');
         }
 
-        if (editingWorkoutId) {
-            const idx = appState.workoutsList.findIndex(w => w.id === editingWorkoutId);
-            if (idx !== -1) {
-                appState.workoutsList[idx] = {
-                    ...appState.workoutsList[idx],
+        function openEditMealModal(id) {
+            const meal = appState.mealsList.find(m => m.id === id);
+            if (!meal) return;
+
+            editingMealId = id;
+            safeSetVal('edit-meal-date', meal.date || selectedDashboardDate);
+            safeSetVal('edit-meal-time', meal.time || '12:00');
+            safeSetVal('edit-meal-title', meal.title || '');
+            safeSetVal('edit-meal-type', meal.mealType || '午餐');
+            safeSetVal('edit-meal-cal', meal.calories || 0);
+            safeSetVal('edit-meal-protein', meal.protein || 0);
+
+            const modal = document.getElementById('edit-meal-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeEditMealModal() {
+            const modal = document.getElementById('edit-meal-modal');
+            if (modal) modal.classList.add('hidden');
+            editingMealId = null;
+        }
+
+        function saveEditMeal() {
+            if (!editingMealId) return;
+
+            const idx = appState.mealsList.findIndex(m => m.id === editingMealId);
+            if (idx === -1) return;
+
+            appState.mealsList[idx].date = document.getElementById('edit-meal-date')?.value || selectedDashboardDate;
+            appState.mealsList[idx].time = document.getElementById('edit-meal-time')?.value || getCurrentTimeStr();
+            appState.mealsList[idx].title = document.getElementById('edit-meal-title')?.value.trim() || '餐點';
+            appState.mealsList[idx].mealType = document.getElementById('edit-meal-type')?.value;
+            appState.mealsList[idx].calories = parseInt(document.getElementById('edit-meal-cal')?.value) || 0;
+            appState.mealsList[idx].protein = parseInt(document.getElementById('edit-meal-protein')?.value) || 0;
+
+            saveToLocalStorage();
+            renderMealsUI();
+            closeEditMealModal();
+        }
+
+        function openWorkoutModal(editId = null) {
+            editingWorkoutId = editId;
+
+            if (editId) {
+                const w = appState.workoutsList.find(item => item.id === editId);
+                if (w) {
+                    safeSetText('workout-modal-title', "修改 Apple Watch 運動");
+                    safeSetVal('workout-date-input', w.date || selectedDashboardDate);
+                    safeSetVal('workout-time-input', w.time || getCurrentTimeStr());
+                    safeSetVal('workout-type-input', w.type);
+                    safeSetVal('workout-duration-input', w.duration);
+                    safeSetVal('workout-cal-input', w.calories);
+                    safeSetVal('workout-note-input', w.note || '');
+                }
+            } else {
+                safeSetText('workout-modal-title', "記錄 Apple Watch 運動");
+                safeSetVal('workout-date-input', selectedDashboardDate);
+                safeSetVal('workout-time-input', getCurrentTimeStr());
+                safeSetVal('workout-type-input', "羽毛球 🏸");
+                safeSetVal('workout-duration-input', "60");
+                safeSetVal('workout-cal-input', "420");
+                safeSetVal('workout-note-input', "");
+            }
+
+            const modal = document.getElementById('workout-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeWorkoutModal() {
+            const modal = document.getElementById('workout-modal');
+            if (modal) modal.classList.add('hidden');
+            editingWorkoutId = null;
+        }
+
+        function saveWorkoutEntry() {
+            const date = document.getElementById('workout-date-input')?.value || selectedDashboardDate;
+            const time = document.getElementById('workout-time-input')?.value || getCurrentTimeStr();
+            const type = document.getElementById('workout-type-input')?.value || '羽毛球 🏸';
+            const duration = parseInt(document.getElementById('workout-duration-input')?.value) || 0;
+            const calories = parseInt(document.getElementById('workout-cal-input')?.value) || 0;
+            const note = document.getElementById('workout-note-input')?.value || '';
+
+            if (calories <= 0) {
+                alert('請輸入有效的運動卡路里');
+                return;
+            }
+
+            if (editingWorkoutId) {
+                const idx = appState.workoutsList.findIndex(w => w.id === editingWorkoutId);
+                if (idx !== -1) {
+                    appState.workoutsList[idx] = {
+                        ...appState.workoutsList[idx],
+                        date,
+                        time,
+                        type,
+                        duration,
+                        calories,
+                        note
+                    };
+                }
+            } else {
+                const item = {
+                    id: Date.now(),
                     date,
                     time,
                     type,
@@ -1473,314 +1312,329 @@
                     calories,
                     note
                 };
+                appState.workoutsList.unshift(item);
             }
-        } else {
-            const item = {
-                id: Date.now(),
-                date,
-                time,
-                type,
-                duration,
-                calories,
-                note
-            };
-            appState.workoutsList.unshift(item);
+
+            saveToLocalStorage();
+            renderWorkoutsUI();
+            closeWorkoutModal();
         }
 
-        saveToLocalStorage();
-        renderWorkoutsUI();
-        closeWorkoutModal();
-        showToast("運動記錄已更新！", "success");
-    }
+        function initChart() {
+            const canvas = document.getElementById('weightChart');
+            if (!canvas || typeof Chart === 'undefined') return;
 
-    function initChart() {
-        const canvas = document.getElementById('weightChart');
-        if (!canvas || typeof Chart === 'undefined') return;
-
-        try {
-            const ctx = canvas.getContext('2d');
-            if (weightChart) weightChart.destroy();
-
-            weightChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: appState.weightData.map(d => d.date),
-                    datasets: [
-                        {
-                            label: '體重 (kg)',
-                            data: appState.weightData.map(d => d.weight),
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#059669'
-                        },
-                        {
-                            label: '目標',
-                            data: appState.targetWeight ? appState.weightData.map(() => appState.targetWeight) : [],
-                            borderColor: '#cbd5e1',
-                            borderDash: [5, 5],
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            ticks: { callback: v => v + ' kg' }
+            try {
+                const ctx = canvas.getContext('2d');
+                weightChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: appState.weightData.map(d => d.date),
+                        datasets: [
+                            {
+                                label: '體重 (kg)',
+                                data: appState.weightData.map(d => d.weight),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#059669'
+                            },
+                            {
+                                label: '目標',
+                                data: appState.targetWeight ? appState.weightData.map(() => appState.targetWeight) : [],
+                                borderColor: '#cbd5e1',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                ticks: { callback: v => v + ' kg' }
+                            }
                         }
                     }
-                }
-            });
-        } catch (e) {
-            console.warn("Chart initialization failed:", e);
-        }
-    }
-
-    function renderWeightTable() {
-        const table = document.getElementById('weight-history-table');
-        if (!table) return;
-
-        table.innerHTML = '';
-        
-        const sorted = [...appState.weightData].reverse();
-        sorted.forEach((item) => {
-            const diff = (item.weight - appState.startWeight).toFixed(1);
-            const diffText = diff <= 0 ? `${diff} kg` : `+${diff} kg`;
-            const bmi = (item.weight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
-
-            const row = document.createElement('tr');
-            row.className = "border-b border-slate-100";
-            row.innerHTML = `
-                <td class="p-2.5 text-slate-700 font-medium">${item.date}</td>
-                <td class="p-2.5 font-extrabold text-slate-900">${item.weight.toFixed(1)} kg</td>
-                <td class="p-2.5 text-amber-600 font-semibold">${bmi}</td>
-                <td class="p-2.5 ${diff <= 0 ? 'text-emerald-600 font-bold' : 'text-rose-500'}">${diffText}</td>
-                <td class="p-2.5 text-right">
-                    <button onclick="deleteWeightRecord('${item.date}')" class="text-slate-400 hover:text-rose-500">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                </td>
-            `;
-            table.appendChild(row);
-        });
-        renderIcons();
-    }
-
-    function openWeightModal() {
-        safeSetVal('new-weight-input', appState.currentWeight);
-        const modal = document.getElementById('weight-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeWeightModal() {
-        const modal = document.getElementById('weight-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function saveWeightEntry() {
-        const val = parseFloat(document.getElementById('new-weight-input')?.value);
-        if (isNaN(val) || val <= 0) {
-            showToast("請輸入有效的體重數字", "error");
-            return;
-        }
-
-        const today = getTodayStr();
-        const existingIdx = appState.weightData.findIndex(w => w.date === today);
-        if (existingIdx !== -1) {
-            appState.weightData[existingIdx].weight = val;
-        } else {
-            appState.weightData.push({ date: today, weight: val });
-        }
-
-        appState.currentWeight = val;
-        saveToLocalStorage();
-        updateProfileHeaderUI();
-        updateProgressUI();
-        renderWeightTable();
-        initChart();
-        closeWeightModal();
-        showToast("已成功記錄體重！", "success");
-    }
-
-    function deleteWeightRecord(date) {
-        if (appState.weightData.length <= 1) {
-            showToast("最少需保留一筆體重記錄！", "error");
-            return;
-        }
-        appState.weightData = appState.weightData.filter(w => w.date !== date);
-        if (appState.weightData.length > 0) {
-            appState.currentWeight = appState.weightData[appState.weightData.length - 1].weight;
-        }
-        saveToLocalStorage();
-        updateProfileHeaderUI();
-        updateProgressUI();
-        renderWeightTable();
-        initChart();
-        showToast("已刪除體重記錄", "info");
-    }
-
-    function updateProgressUI() {
-        const totalToLose = appState.startWeight - appState.targetWeight;
-        const currentLost = appState.startWeight - appState.currentWeight;
-        let percent = 0;
-        if (totalToLose > 0) {
-            percent = Math.max(0, Math.min(100, Math.round((currentLost / totalToLose) * 100)));
-        }
-
-        const leftKg = (appState.currentWeight - appState.targetWeight).toFixed(1);
-        const leftText = leftKg <= 0 ? '已達標！🎉' : `還差 ${leftKg} kg`;
-
-        safeSetText('sidebar-weight-left', leftText);
-        safeSetText('weight-progress-percent', `${percent}%`);
-        
-        const pBar = document.getElementById('sidebar-progress-bar');
-        if (pBar) pBar.style.width = `${percent}%`;
-
-        const fillBar = document.getElementById('weight-progress-fill');
-        if (fillBar) fillBar.style.width = `${percent}%`;
-    }
-
-    function renderChatUI() {
-        const container = document.getElementById('chat-messages');
-        if (!container) return;
-
-        container.innerHTML = '';
-        appState.chatHistory.forEach(msg => {
-            const div = document.createElement('div');
-            if (msg.sender === 'user') {
-                div.className = "flex justify-end";
-                div.innerHTML = `
-                    <div class="bg-emerald-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[85%] leading-relaxed shadow-sm">
-                        ${msg.text}
-                    </div>
-                `;
-            } else {
-                div.className = "flex gap-2.5 items-start";
-                div.innerHTML = `
-                    <div class="w-7 h-7 rounded-full gradient-emerald text-white flex items-center justify-center font-bold text-xs shadow flex-shrink-0 mt-0.5">
-                        AI
-                    </div>
-                    <div class="bg-slate-100 text-slate-800 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-[85%] leading-relaxed">
-                        ${msg.text}
-                    </div>
-                `;
+                });
+            } catch (e) {
+                console.warn("Chart initialization failed:", e);
             }
-            container.appendChild(div);
-        });
-        container.scrollTop = container.scrollHeight;
-    }
+        }
 
-    async function sendChatMessage() {
-        const input = document.getElementById('chat-input');
-        if (!input) return;
-        const text = input.value.trim();
-        if (!text) return;
+        function renderWeightTable() {
+            const table = document.getElementById('weight-history-table');
+            if (!table) return;
 
-        appState.chatHistory.push({ sender: 'user', text });
-        input.value = '';
-        renderChatUI();
+            table.innerHTML = '';
+            
+            const sorted = [...appState.weightData].reverse();
+            sorted.forEach((item) => {
+                const diff = (item.weight - appState.startWeight).toFixed(1);
+                const diffText = diff <= 0 ? `${diff} kg` : `+${diff} kg`;
+                const bmi = (item.weight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
 
-        if (!appState.apiKey) {
-            appState.chatHistory.push({
-                sender: 'ai',
-                text: '請先在右上角「設定」填入 Gemini API Key，我先可以同你對話啊！'
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-100";
+                row.innerHTML = `
+                    <td class="p-2.5 text-slate-700 font-medium">${item.date}</td>
+                    <td class="p-2.5 font-extrabold text-slate-900">${item.weight.toFixed(1)} kg</td>
+                    <td class="p-2.5 text-amber-600 font-semibold">${bmi}</td>
+                    <td class="p-2.5 ${diff <= 0 ? 'text-emerald-600 font-bold' : 'text-rose-500'}">${diffText}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteWeightRecord('${item.date}')" class="text-slate-400 hover:text-rose-500">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                `;
+                table.appendChild(row);
             });
-            renderChatUI();
-            openSettingsModal();
-            return;
+            renderIcons();
         }
 
-        // Add loading placeholder
-        appState.chatHistory.push({ sender: 'ai', text: '思考中...' });
-        renderChatUI();
+        function updateProgressUI() {
+            const totalToLose = appState.startWeight - appState.targetWeight;
+            const currentLost = appState.startWeight - appState.currentWeight;
+            let percent = 0;
+            if (totalToLose > 0) {
+                percent = Math.max(0, Math.min(100, Math.round((currentLost / totalToLose) * 100)));
+            }
 
-        try {
-            const todayMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
-            const todayMealsSummary = todayMeals.map(m => `${m.mealType}: ${m.title} (${m.calories}kcal)`).join('; ') || '今天尚未記錄餐點';
+            const leftKg = (appState.currentWeight - appState.targetWeight).toFixed(1);
+            const leftText = leftKg <= 0 ? '已達標！🎉' : `還差 ${leftKg} kg`;
 
-            const systemPrompt = `你是一位親切、專業的香港廣東話 AI 減肥專屬營養師。
-用戶檔案：
-- 身高：${appState.heightCm} cm
-- 目前體重：${appState.currentWeight} kg
-- 目標體重：${appState.targetWeight} kg
-- 今日飲食摘要：${todayMealsSummary}
+            safeSetText('sidebar-weight-left', leftText);
+            
+            const pBar = document.getElementById('sidebar-progress-bar');
+            if (pBar) pBar.style.width = `${percent}%`;
 
-對話規則：
-1. 必須全程使用【廣東話（香港繁體）】回答。
-2. 態度鼓勵、親切、具體。特別熟悉香港外賣（茶餐廳、太興、麥當勞、壽司郎、TamJai譚仔等）與運動建議。
-3. 保持文字簡潔有條理。`;
+            const fillBar = document.getElementById('weight-progress-fill');
+            if (fillBar) fillBar.style.width = `${percent}%`;
 
-            const contents = [
-                { parts: [{ text: systemPrompt }] },
-                ...appState.chatHistory.slice(0, -1).map(msg => ({
-                    role: msg.sender === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.text }]
-                }))
-            ];
+            safeSetText('weight-progress-percent', `${percent}%`);
+        }
 
-            const requestBody = { contents };
-            const responseData = await fetchGeminiWithFallback(requestBody);
+        function openWeightModal() {
+            const modal = document.getElementById('weight-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
 
-            const aiResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我剛剛走神了，可以再講一次嗎？';
+        function closeWeightModal() {
+            const modal = document.getElementById('weight-modal');
+            if (modal) modal.classList.add('hidden');
+        }
 
-            // Replace loading message with actual response
-            appState.chatHistory[appState.chatHistory.length - 1] = { sender: 'ai', text: aiResponse };
+        function saveWeightEntry() {
+            const val = parseFloat(document.getElementById('new-weight-input')?.value);
+            if (!val || val < 30 || val > 200) {
+                alert('請輸入有效的體重');
+                return;
+            }
+
+            appState.currentWeight = val;
+            const today = getTodayStr();
+            
+            const existingIdx = appState.weightData.findIndex(d => d.date === today);
+            if (existingIdx >= 0) {
+                appState.weightData[existingIdx].weight = val;
+            } else {
+                appState.weightData.push({ date: today, weight: val });
+            }
+
             saveToLocalStorage();
+            updateProfileHeaderUI();
+            updateProgressUI();
+            
+            if (weightChart) {
+                weightChart.data.labels = appState.weightData.map(d => d.date);
+                weightChart.data.datasets[0].data = appState.weightData.map(d => d.weight);
+                weightChart.data.datasets[1].data = appState.weightData.map(() => appState.targetWeight);
+                weightChart.update();
+            }
+
+            renderWeightTable();
+            closeWeightModal();
+        }
+
+        function deleteWeightRecord(date) {
+            appState.weightData = appState.weightData.filter(d => d.date !== date);
+            if (appState.weightData.length > 0) {
+                appState.currentWeight = appState.weightData[appState.weightData.length - 1].weight;
+            }
+            saveToLocalStorage();
+            updateProfileHeaderUI();
+            updateProgressUI();
+            renderWeightTable();
+        }
+
+        function renderChatUI() {
+            const container = document.getElementById('chat-messages');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            appState.chatHistory.forEach(msg => {
+                const isUser = msg.sender === 'user';
+                const bubble = document.createElement('div');
+                bubble.className = isUser ? "flex gap-2.5 justify-end" : "flex gap-2.5 max-w-[85%]";
+                
+                if (isUser) {
+                    bubble.innerHTML = `
+                        <div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none text-slate-800 leading-relaxed shadow-sm">
+                            ${msg.text}
+                        </div>
+                    `;
+                } else {
+                    bubble.innerHTML = `
+                        <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">AI</div>
+                        <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-slate-800 leading-relaxed shadow-sm">
+                            ${msg.text.replace(/\n/g, '<br>')}
+                        </div>
+                    `;
+                }
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            appState.chatHistory.push({ sender: 'user', text });
+            input.value = '';
             renderChatUI();
 
-        } catch (err) {
-            appState.chatHistory[appState.chatHistory.length - 1] = {
-                sender: 'ai',
-                text: `⚠️ 對話連線出錯：${err.message}`
-            };
-            renderChatUI();
+            const messagesContainer = document.getElementById('chat-messages');
+            if (!messagesContainer) return;
+
+            const aiLoadingBubble = document.createElement('div');
+            aiLoadingBubble.className = "flex gap-2.5 max-w-[85%]";
+            aiLoadingBubble.innerHTML = `
+                <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">AI</div>
+                <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-slate-500 flex items-center gap-1.5">
+                    <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 營養師思考中...
+                </div>
+            `;
+            messagesContainer.appendChild(aiLoadingBubble);
+            lucide.createIcons();
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            try {
+                const systemPrompt = `你是一位友善、專業的廣東話減肥營養師。用戶資料：身高 ${appState.heightCm}cm，目前體重 ${appState.currentWeight}kg，目標 ${appState.targetWeight}kg（每日1400-1500kcal赤字）。請用親切廣東話簡潔解答。`;
+                const apiUrl = getGeminiEndpoint('/v1beta/models/gemini-2.5-flash:generateContent');
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: text }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    const errMsg = data.error.message || JSON.stringify(data.error);
+                    if (handleLocationError(errMsg)) {
+                        appState.chatHistory.push({ sender: 'ai', text: "⚠️ 遇到地區限制 (User location is not supported)。請開啟 VPN 轉至台灣/日本/美國 IP，或於設定中填入 Cloudflare API 代理網址！" });
+                    } else {
+                        appState.chatHistory.push({ sender: 'ai', text: `對唔住，出現錯誤：${errMsg}` });
+                    }
+                    saveToLocalStorage();
+                    renderChatUI();
+                    return;
+                }
+
+                const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "對唔住，暫時未能回應，請設定 API Key 後再試。";
+
+                appState.chatHistory.push({ sender: 'ai', text: aiReply });
+                saveToLocalStorage();
+                renderChatUI();
+
+            } catch (err) {
+                if (!handleLocationError(err.message)) {
+                    const errorMsg = appState.apiKey ? "網絡連接出現問題，請稍後再試。" : "請點擊右上角「設定」輸入你嘅 Gemini API Key 即可對話。";
+                    appState.chatHistory.push({ sender: 'ai', text: errorMsg });
+                } else {
+                    appState.chatHistory.push({ sender: 'ai', text: "⚠️ 遇到地區限制 (User location is not supported)。請開啟 VPN 轉至台灣/日本/美國 IP，或於設定中填入 Cloudflare API 代理網址！" });
+                }
+                saveToLocalStorage();
+                renderChatUI();
+            }
         }
-    }
 
-    function openSettingsModal() {
-        safeSetVal('setting-height', appState.heightCm);
-        safeSetVal('setting-start-weight', appState.startWeight);
-        safeSetVal('setting-target-weight', appState.targetWeight);
-        safeSetVal('setting-target-cal', appState.dailyTargetCal);
-        safeSetVal('setting-api-key', appState.apiKey || '');
-        safeSetVal('setting-api-proxy', appState.apiProxyUrl || '');
-        safeSetVal('setting-model-select', appState.selectedModel || 'auto');
+        function openSettingsModal() {
+            safeSetVal('setting-height', appState.heightCm);
+            safeSetVal('setting-start-weight', appState.startWeight);
+            safeSetVal('setting-target-weight', appState.targetWeight);
+            safeSetVal('setting-target-cal', appState.dailyTargetCal);
+            safeSetVal('setting-api-key', appState.apiKey || '');
+            safeSetVal('setting-api-proxy', appState.apiProxyUrl || '');
 
-        const modal = document.getElementById('settings-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeSettingsModal() {
-        const modal = document.getElementById('settings-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function saveSettings() {
-        appState.heightCm = parseFloat(document.getElementById('setting-height')?.value) || 163;
-        appState.startWeight = parseFloat(document.getElementById('setting-start-weight')?.value) || 69.0;
-        appState.targetWeight = parseFloat(document.getElementById('setting-target-weight')?.value) || 60.0;
-        appState.dailyTargetCal = parseInt(document.getElementById('setting-target-cal')?.value) || 1450;
-        appState.apiKey = document.getElementById('setting-api-key')?.value.trim() || '';
-        appState.apiProxyUrl = document.getElementById('setting-api-proxy')?.value.trim() || '';
-        appState.selectedModel = document.getElementById('setting-model-select')?.value || 'auto';
-
-        saveToLocalStorage();
-        renderAll();
-        closeSettingsModal();
-        showToast("設定已順利儲存！", "success");
-    }
-
-    function resetAllData() {
-        if (confirm("確定要重置所有飲食、運動與體重歷史記錄嗎？此動作無法復原。")) {
-            localStorage.removeItem('ai_diet_app_state');
-            location.reload();
+            const modal = document.getElementById('settings-modal');
+            if (modal) modal.classList.remove('hidden');
         }
-    }
-</script>
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function saveSettings() {
+            appState.heightCm = parseFloat(document.getElementById('setting-height')?.value) || 163;
+            appState.startWeight = parseFloat(document.getElementById('setting-start-weight')?.value) || 69.0;
+            appState.targetWeight = parseFloat(document.getElementById('setting-target-weight')?.value) || 60.0;
+            appState.dailyTargetCal = parseInt(document.getElementById('setting-target-cal')?.value) || 1450;
+            appState.apiKey = document.getElementById('setting-api-key')?.value.trim() || '';
+            appState.apiProxyUrl = document.getElementById('setting-api-proxy')?.value.trim() || '';
+
+            saveToLocalStorage();
+            renderAll();
+            closeSettingsModal();
+            alert('設定已成功儲存！');
+        }
+
+        function resetAllData() {
+            if (confirm("確定要重置所有飲食、體重及對話資料？")) {
+                localStorage.removeItem('ai_diet_app_state');
+                location.reload();
+            }
+        }
+
+        window.switchTab = switchTab;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
+        window.saveSettings = saveSettings;
+        window.resetAllData = resetAllData;
+        window.openWorkoutModal = openWorkoutModal;
+        window.closeWorkoutModal = closeWorkoutModal;
+        window.saveWorkoutEntry = saveWorkoutEntry;
+        window.deleteWorkout = deleteWorkout;
+        window.openEditMealModal = openEditMealModal;
+        window.closeEditMealModal = closeEditMealModal;
+        window.saveEditMeal = saveEditMeal;
+        window.deleteMeal = deleteMeal;
+        window.openWeightModal = openWeightModal;
+        window.closeWeightModal = closeWeightModal;
+        window.saveWeightEntry = saveWeightEntry;
+        window.deleteWeightRecord = deleteWeightRecord;
+        window.addWater = addWater;
+        window.handleFileSelect = handleFileSelect;
+        window.analyzeMealImage = analyzeMealImage;
+        window.saveMealToLog = saveMealToLog;
+        window.sendChatMessage = sendChatMessage;
+        window.changeDashboardDate = changeDashboardDate;
+        window.shiftDashboardDate = shiftDashboardDate;
+        window.resetDashboardToToday = resetDashboardToToday;
+    </script>
 </body>
 </html>
