@@ -584,7 +584,7 @@
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2">
                 <i data-lucide="sliders" class="w-5 h-5 text-emerald-600"></i>
-                <h3 class="font-bold text-slate-900 text-base">個人數據與設定</h3>
+                <h3 class="font-bold text-slate-900 text-base">個人數據與 API 設定</h3>
             </div>
             <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-4 h-4"></i>
@@ -620,20 +620,37 @@
 
         <!-- API Key & Proxy Settings -->
         <div class="space-y-3 pt-2 border-t border-slate-100">
-            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Gemini API 設定</h4>
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Gemini API 與模型設定</h4>
+            
             <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key (支援填入多個 Key)</label>
-                <input type="password" id="setting-api-key" placeholder="貼上 API Key (若有多個，請用逗號分隔 AIzaSy1..., AIzaSy2...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key (支援填入多個 Key 輪換)</label>
+                <input type="password" id="setting-api-key" placeholder="貼上 API Key (用逗號分隔 AIzaSy1..., AIzaSy2...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                 <p class="text-[10px] text-slate-500 mt-1">
-                    💡 <b>遇到 Limit / 額度限制？</b> 可填入多個由不同 Google 帳戶申請的 Key（用逗號 `,` 分隔），當其中一個爆上限，系統會自動切換至下一個備用 Key！
+                    💡 填入多個 Key（用 `,` 分隔），當某個 Key 限額時系統會自動嘗試下一個備用 Key。
                 </p>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini 模型選擇</label>
+                <div class="flex gap-2">
+                    <select id="setting-model-select" class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        <option value="auto">🤖 自動最佳化 (Auto-Fallback)</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash (最新推薦)</option>
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    </select>
+                    <button id="btn-detect-models" onclick="detectAvailableModels()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold whitespace-nowrap transition">
+                        🔍 檢測 Key 可用模型
+                    </button>
+                </div>
             </div>
 
             <div>
                 <label class="block text-[11px] font-semibold text-slate-700 mb-1">API 代理位址 (Custom Proxy URL)</label>
                 <input type="text" id="setting-api-proxy" placeholder="留空使用官方域名，或填寫 Cloudflare Worker 代理位址" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                 <p class="text-[10px] text-amber-600 mt-1">
-                    💡 <b>香港/受限地區用戶特別提示：</b> 若遇到 "User location is not supported"，請開啟 VPN (轉至台灣/日本/美國)，或在此處填入你搭建的 Cloudflare Worker 代理網址。
+                    💡 <b>香港/受限地區用戶提示：</b> 若遇到 Location Not Supported，請開啟 VPN 或填入 Cloudflare Worker 代理。
                 </p>
             </div>
         </div>
@@ -650,7 +667,38 @@
 </div>
 
 <script>
-    // Safe DOM setter helper
+    // Custom Toast Notification System (replaces standard alert)
+    function showToast(message, type = 'info') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        const bgColor = type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-800';
+        toast.className = `${bgColor} text-white text-xs font-semibold p-3.5 rounded-xl shadow-lg border border-white/10 transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto flex items-start justify-between gap-2`;
+        
+        toast.innerHTML = `
+            <div class="flex-1 whitespace-pre-line leading-relaxed">${message}</div>
+            <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white text-sm font-bold">✕</button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+        }, 10);
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-[-10px]');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    // Safe DOM helper
     function safeSetText(id, text) {
         const el = document.getElementById(id);
         if (el) el.innerText = text;
@@ -718,6 +766,7 @@
         waterLogs: {},
         apiKey: '',
         apiProxyUrl: '',
+        selectedModel: 'auto',
         mealsList: [],
         workoutsList: [],
         weightData: [
@@ -737,11 +786,13 @@
     let selectedBase64Image = null;
     let weightChart = null;
 
-    // Candidate Gemini Models for Automatic Fallback during high demand
+    // Standard Gemini Models for Automatic Fallback Loop
     const GEMINI_MODELS = [
-        'gemini-2.5-flash',
         'gemini-2.0-flash',
-        'gemini-1.5-flash'
+        'gemini-1.5-flash',
+        'gemini-2.5-flash',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash-lite'
     ];
 
     // Get array of API Keys (Support multiple comma-separated keys for rate-limit rotation)
@@ -761,28 +812,78 @@
     // Handle Location Not Supported Error
     function handleLocationError(errMessage) {
         if (errMessage && (errMessage.includes("location is not supported") || errMessage.includes("FAILED_PRECONDITION"))) {
-            alert("⚠️ 地區限制錯誤 (User Location Not Supported)\n\nGoogle Gemini API 目前限制香港及部分地區直接連線。\n\n【解決方法】\n1. 開啟 VPN 並切換至台灣/日本/新加坡/美國。\n2. 或在右上角「設定」中，填入免費搭建的 Cloudflare Worker 代理網址 (Custom Proxy URL)。");
+            showToast("⚠️ 地區限制錯誤 (User Location Not Supported)\n\nGoogle Gemini API 限制部分地區直連。\n【解決方法】\n1. 開啟 VPN 並轉至台灣/日本/美國。\n2. 或在「設定」中填寫 Cloudflare Worker 代理位址。", "error");
             return true;
         }
         return false;
+    }
+
+    // Detect Available Models for user API Key
+    async function detectAvailableModels() {
+        const keysList = getApiKeysList();
+        if (keysList.length === 0) {
+            showToast("請先填入 Gemini API Key！", "error");
+            return;
+        }
+        const btn = document.getElementById('btn-detect-models');
+        if (btn) btn.innerText = "檢測中...";
+
+        let baseUrl = (appState.apiProxyUrl && appState.apiProxyUrl.trim()) 
+            ? appState.apiProxyUrl.trim().replace(/\/+$/, '') 
+            : 'https://generativelanguage.googleapis.com';
+
+        const url = `${baseUrl}/v1beta/models?key=${keysList[0]}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.error) {
+                showToast("檢測失敗：" + data.error.message, "error");
+                return;
+            }
+            if (data.models && Array.isArray(data.models)) {
+                const available = data.models
+                    .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''));
+                
+                if (available.length > 0) {
+                    showToast(`✅ 檢測成功！你的 Key 可用模型：\n${available.slice(0, 4).join(', ')}\n已自動設為最佳模型：${available[0]}`, "success");
+                    appState.selectedModel = available[0];
+                    safeSetVal('setting-model-select', available[0]);
+                    saveToLocalStorage();
+                } else {
+                    showToast("未找到支援內容生成的 Gemini 模型。", "error");
+                }
+            }
+        } catch (e) {
+            showToast("連線檢測發生錯誤：" + e.message, "error");
+        } finally {
+            if (btn) btn.innerText = "🔍 檢測 Key 可用模型";
+        }
     }
 
     // Smart API Request Handler with Multi-Key Rotation & Model Fallback
     async function fetchGeminiWithFallback(requestBody) {
         const keysList = getApiKeysList();
         if (keysList.length === 0) {
-            throw new Error("請先在設定中填入 Gemini API Key！");
+            throw new Error("請先在「設定」中填入 Gemini API Key！");
         }
 
         let lastErrorMsg = '';
 
-        // Iterate through all provided API Keys
+        // Order candidate models
+        let candidateModels = [...GEMINI_MODELS];
+        if (appState.selectedModel && appState.selectedModel !== 'auto') {
+            candidateModels = [appState.selectedModel, ...GEMINI_MODELS.filter(m => m !== appState.selectedModel)];
+        }
+
+        // Loop through all keys
         for (let kIdx = 0; kIdx < keysList.length; kIdx++) {
             const currentKey = keysList[kIdx];
 
-            // Iterate through available Gemini Models
-            for (let modelIndex = 0; modelIndex < GEMINI_MODELS.length; modelIndex++) {
-                const model = GEMINI_MODELS[modelIndex];
+            // Loop through model candidates
+            for (let mIdx = 0; mIdx < candidateModels.length; mIdx++) {
+                const model = candidateModels[mIdx];
                 const apiUrl = getGeminiEndpoint(model, currentKey);
 
                 try {
@@ -802,26 +903,31 @@
                             throw new Error(msg);
                         }
 
+                        // If Model Not Found (404), gracefully fall back to NEXT model candidate
+                        if (response.status === 404 || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("not supported")) {
+                            console.warn(`Model [${model}] returned 404 / Not Found. Trying fallback model...`);
+                            continue; // Continue loop to next model!
+                        }
+
                         // Rate Limit / Quota Exceeded / High Demand
                         if (msg.toLowerCase().includes("quota") || 
                             msg.toLowerCase().includes("resource_exhausted") || 
                             msg.toLowerCase().includes("high demand") || 
                             msg.toLowerCase().includes("overloaded") || 
                             response.status === 429 || response.status === 503) {
-                            console.warn(`Key #${kIdx+1} with Model ${model} hit limit/overload. Switching route...`);
-                            
-                            // If multiple keys available and this key hit quota, try next key!
+                            console.warn(`Key #${kIdx+1} hit rate limit on ${model}. Rotating...`);
                             if (keysList.length > 1) {
-                                break; // Break model loop, switch to next Key
+                                break; // Switch to next API Key
                             }
                             await new Promise(r => setTimeout(r, 1000));
-                            continue; // Try next model for current key
+                            continue;
                         }
 
-                        throw new Error(msg);
+                        console.warn(`Error on ${model}: ${msg}. Trying next model...`);
+                        continue;
                     }
 
-                    // Success!
+                    // Success! Return API response
                     return data;
 
                 } catch (err) {
@@ -833,10 +939,14 @@
             }
         }
 
+        if (lastErrorMsg.toLowerCase().includes("not found") || lastErrorMsg.toLowerCase().includes("not supported")) {
+            throw new Error(`⚠️ 模型存取失敗 (404 Not Found)。\n建議在右上角「設定」點擊「🔍 檢測 Key 可用模型」自動匹配可用的 Gemini 模型。`);
+        }
+
         if (lastErrorMsg.toLowerCase().includes("quota") || 
             lastErrorMsg.toLowerCase().includes("resource_exhausted") || 
             lastErrorMsg.toLowerCase().includes("429")) {
-            throw new Error("⚠️ 已達到 Google API 使用次數上限 (Rate Limit / Quota Exceeded)。\n\n【建議解法】\n1. 請稍等 1-2 分鐘重試（頻率限制會自動解鎖）。\n2. 或在「設定」中填入第二個 API Key（用逗號分隔），系統會自動輪換！");
+            throw new Error("⚠️ 已達到 Google API 使用上限 (Quota Exceeded)。請稍等 1 分鐘或在設定中填入多個 Key 輪換！");
         }
 
         throw new Error(lastErrorMsg || "請求失敗，請稍後再試。");
@@ -1023,6 +1133,7 @@
         appState.mealsList = appState.mealsList.filter(m => m.id !== id);
         saveToLocalStorage();
         renderMealsUI();
+        showToast("已刪除該筆飲食記錄", "info");
     }
 
     function renderWorkoutsUI() {
@@ -1085,6 +1196,7 @@
         appState.workoutsList = appState.workoutsList.filter(w => w.id !== id);
         saveToLocalStorage();
         renderWorkoutsUI();
+        showToast("已刪除該筆運動記錄", "info");
     }
 
     function updateNetCalorieUI() {
@@ -1119,6 +1231,7 @@
         appState.waterLogs[selectedDashboardDate] += amount;
         saveToLocalStorage();
         updateNetCalorieUI();
+        showToast(`已成功記錄飲水 +${amount}ml 💧`, "success");
     }
 
     function handleFileSelect(e) {
@@ -1141,7 +1254,7 @@
 
     async function analyzeMealImage() {
         if (!selectedBase64Image) {
-            alert('請先上傳相片！');
+            showToast('請先上傳或拍攝餐點相片！', 'error');
             return;
         }
 
@@ -1152,7 +1265,7 @@
         const mealNotes = document.getElementById('meal-notes')?.value.trim() || '無額外說明';
 
         if (!appState.apiKey) {
-            alert('請先點擊右上角「設定」填入你的 Gemini API Key，才能啟用 AI 相片食物辨識功能！');
+            showToast('請先點擊右上角「設定」填入你的 Gemini API Key！', 'error');
             if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
             openSettingsModal();
             return;
@@ -1171,7 +1284,7 @@
 
 請仔細辨識圖片中的食材、份量與烹調方式（特別注意港式/外賣常見油份與醬汁），估算卡路里與三大營養素，並根據其減肥目標給予 1-10 分的健康減肥評分。
 
-請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何額外說明）：
+請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何 Markdown 格式標籤）：
 {
   "title": "精準辨識食物名稱 (例如: 港式切雞飯少汁配焯菜)",
   "score": 8.0,
@@ -1231,10 +1344,11 @@
 
             const resCard = document.getElementById('analysis-result-card');
             if (resCard) resCard.classList.remove('hidden');
+            showToast("AI 相片評估完成！", "success");
 
         } catch (err) {
             console.error("Meal Analysis Error:", err);
-            alert("相片分析提示：" + (err.message || "請檢查 API Key 或網絡連線。"));
+            showToast("相片分析失敗：" + (err.message || "請檢查 API Key 或網絡連線。"), "error");
         } finally {
             if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
             renderIcons();
@@ -1254,6 +1368,7 @@
         appState.mealsList.unshift(newMeal);
         saveToLocalStorage();
         renderMealsUI();
+        showToast("已成功儲存至飲食記錄！", "success");
         switchTab('dashboard');
     }
 
@@ -1295,6 +1410,7 @@
         saveToLocalStorage();
         renderMealsUI();
         closeEditMealModal();
+        showToast("修改成功！", "success");
     }
 
     function openWorkoutModal(editId = null) {
@@ -1340,7 +1456,7 @@
         const note = document.getElementById('workout-note-input')?.value || '';
 
         if (calories <= 0) {
-            alert('請輸入有效的運動卡路里');
+            showToast('請輸入有效的運動卡路里！', 'error');
             return;
         }
 
@@ -1373,6 +1489,7 @@
         saveToLocalStorage();
         renderWorkoutsUI();
         closeWorkoutModal();
+        showToast("運動記錄已更新！", "success");
     }
 
     function initChart() {
@@ -1381,6 +1498,8 @@
 
         try {
             const ctx = canvas.getContext('2d');
+            if (weightChart) weightChart.destroy();
+
             weightChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1451,6 +1570,59 @@
         renderIcons();
     }
 
+    function openWeightModal() {
+        safeSetVal('new-weight-input', appState.currentWeight);
+        const modal = document.getElementById('weight-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeWeightModal() {
+        const modal = document.getElementById('weight-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function saveWeightEntry() {
+        const val = parseFloat(document.getElementById('new-weight-input')?.value);
+        if (isNaN(val) || val <= 0) {
+            showToast("請輸入有效的體重數字", "error");
+            return;
+        }
+
+        const today = getTodayStr();
+        const existingIdx = appState.weightData.findIndex(w => w.date === today);
+        if (existingIdx !== -1) {
+            appState.weightData[existingIdx].weight = val;
+        } else {
+            appState.weightData.push({ date: today, weight: val });
+        }
+
+        appState.currentWeight = val;
+        saveToLocalStorage();
+        updateProfileHeaderUI();
+        updateProgressUI();
+        renderWeightTable();
+        initChart();
+        closeWeightModal();
+        showToast("已成功記錄體重！", "success");
+    }
+
+    function deleteWeightRecord(date) {
+        if (appState.weightData.length <= 1) {
+            showToast("最少需保留一筆體重記錄！", "error");
+            return;
+        }
+        appState.weightData = appState.weightData.filter(w => w.date !== date);
+        if (appState.weightData.length > 0) {
+            appState.currentWeight = appState.weightData[appState.weightData.length - 1].weight;
+        }
+        saveToLocalStorage();
+        updateProfileHeaderUI();
+        updateProgressUI();
+        renderWeightTable();
+        initChart();
+        showToast("已刪除體重記錄", "info");
+    }
+
     function updateProgressUI() {
         const totalToLose = appState.startWeight - appState.targetWeight;
         const currentLost = appState.startWeight - appState.currentWeight;
@@ -1463,67 +1635,13 @@
         const leftText = leftKg <= 0 ? '已達標！🎉' : `還差 ${leftKg} kg`;
 
         safeSetText('sidebar-weight-left', leftText);
+        safeSetText('weight-progress-percent', `${percent}%`);
         
         const pBar = document.getElementById('sidebar-progress-bar');
         if (pBar) pBar.style.width = `${percent}%`;
 
         const fillBar = document.getElementById('weight-progress-fill');
         if (fillBar) fillBar.style.width = `${percent}%`;
-
-        safeSetText('weight-progress-percent', `${percent}%`);
-    }
-
-    function openWeightModal() {
-        const modal = document.getElementById('weight-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeWeightModal() {
-        const modal = document.getElementById('weight-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function saveWeightEntry() {
-        const val = parseFloat(document.getElementById('new-weight-input')?.value);
-        if (!val || val < 30 || val > 200) {
-            alert('請輸入有效的體重');
-            return;
-        }
-
-        appState.currentWeight = val;
-        const today = getTodayStr();
-        
-        const existingIdx = appState.weightData.findIndex(d => d.date === today);
-        if (existingIdx >= 0) {
-            appState.weightData[existingIdx].weight = val;
-        } else {
-            appState.weightData.push({ date: today, weight: val });
-        }
-
-        saveToLocalStorage();
-        updateProfileHeaderUI();
-        updateProgressUI();
-        
-        if (weightChart) {
-            weightChart.data.labels = appState.weightData.map(d => d.date);
-            weightChart.data.datasets[0].data = appState.weightData.map(d => d.weight);
-            weightChart.data.datasets[1].data = appState.weightData.map(() => appState.targetWeight);
-            weightChart.update();
-        }
-
-        renderWeightTable();
-        closeWeightModal();
-    }
-
-    function deleteWeightRecord(date) {
-        appState.weightData = appState.weightData.filter(d => d.date !== date);
-        if (appState.weightData.length > 0) {
-            appState.currentWeight = appState.weightData[appState.weightData.length - 1].weight;
-        }
-        saveToLocalStorage();
-        updateProfileHeaderUI();
-        updateProgressUI();
-        renderWeightTable();
     }
 
     function renderChatUI() {
@@ -1531,27 +1649,27 @@
         if (!container) return;
 
         container.innerHTML = '';
-
         appState.chatHistory.forEach(msg => {
-            const isUser = msg.sender === 'user';
-            const bubble = document.createElement('div');
-            bubble.className = isUser ? "flex gap-2.5 justify-end" : "flex gap-2.5 max-w-[85%]";
-            
-            if (isUser) {
-                bubble.innerHTML = `
-                    <div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none text-slate-800 leading-relaxed shadow-sm">
+            const div = document.createElement('div');
+            if (msg.sender === 'user') {
+                div.className = "flex justify-end";
+                div.innerHTML = `
+                    <div class="bg-emerald-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[85%] leading-relaxed shadow-sm">
                         ${msg.text}
                     </div>
                 `;
             } else {
-                bubble.innerHTML = `
-                    <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">AI</div>
-                    <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-slate-800 leading-relaxed shadow-sm">
-                        ${msg.text.replace(/\n/g, '<br>')}
+                div.className = "flex gap-2.5 items-start";
+                div.innerHTML = `
+                    <div class="w-7 h-7 rounded-full gradient-emerald text-white flex items-center justify-center font-bold text-xs shadow flex-shrink-0 mt-0.5">
+                        AI
+                    </div>
+                    <div class="bg-slate-100 text-slate-800 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-[85%] leading-relaxed">
+                        ${msg.text}
                     </div>
                 `;
             }
-            container.appendChild(bubble);
+            container.appendChild(div);
         });
         container.scrollTop = container.scrollHeight;
     }
@@ -1559,7 +1677,6 @@
     async function sendChatMessage() {
         const input = document.getElementById('chat-input');
         if (!input) return;
-
         const text = input.value.trim();
         if (!text) return;
 
@@ -1567,40 +1684,59 @@
         input.value = '';
         renderChatUI();
 
-        const messagesContainer = document.getElementById('chat-messages');
-        if (!messagesContainer) return;
+        if (!appState.apiKey) {
+            appState.chatHistory.push({
+                sender: 'ai',
+                text: '請先在右上角「設定」填入 Gemini API Key，我先可以同你對話啊！'
+            });
+            renderChatUI();
+            openSettingsModal();
+            return;
+        }
 
-        const aiLoadingBubble = document.createElement('div');
-        aiLoadingBubble.className = "flex gap-2.5 max-w-[85%]";
-        aiLoadingBubble.innerHTML = `
-            <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">AI</div>
-            <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-slate-500 flex items-center gap-1.5">
-                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 營養師思考中...
-            </div>
-        `;
-        messagesContainer.appendChild(aiLoadingBubble);
-        renderIcons();
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // Add loading placeholder
+        appState.chatHistory.push({ sender: 'ai', text: '思考中...' });
+        renderChatUI();
 
         try {
-            const systemPrompt = `你是一位友善、專業的廣東話減肥營養師。用戶資料：身高 ${appState.heightCm}cm，目前體重 ${appState.currentWeight}kg，目標 ${appState.targetWeight}kg（每日1400-1500kcal赤字）。請用親切廣東話簡潔解答。`;
-            
-            const requestBody = {
-                contents: [{ parts: [{ text: text }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            };
+            const todayMeals = appState.mealsList.filter(m => m.date === selectedDashboardDate);
+            const todayMealsSummary = todayMeals.map(m => `${m.mealType}: ${m.title} (${m.calories}kcal)`).join('; ') || '今天尚未記錄餐點';
 
-            const data = await fetchGeminiWithFallback(requestBody);
-            const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "對唔住，暫時未能回應，請再試一次。";
+            const systemPrompt = `你是一位親切、專業的香港廣東話 AI 減肥專屬營養師。
+用戶檔案：
+- 身高：${appState.heightCm} cm
+- 目前體重：${appState.currentWeight} kg
+- 目標體重：${appState.targetWeight} kg
+- 今日飲食摘要：${todayMealsSummary}
 
-            appState.chatHistory.push({ sender: 'ai', text: aiReply });
+對話規則：
+1. 必須全程使用【廣東話（香港繁體）】回答。
+2. 態度鼓勵、親切、具體。特別熟悉香港外賣（茶餐廳、太興、麥當勞、壽司郎、TamJai譚仔等）與運動建議。
+3. 保持文字簡潔有條理。`;
+
+            const contents = [
+                { parts: [{ text: systemPrompt }] },
+                ...appState.chatHistory.slice(0, -1).map(msg => ({
+                    role: msg.sender === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.text }]
+                }))
+            ];
+
+            const requestBody = { contents };
+            const responseData = await fetchGeminiWithFallback(requestBody);
+
+            const aiResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我剛剛走神了，可以再講一次嗎？';
+
+            // Replace loading message with actual response
+            appState.chatHistory[appState.chatHistory.length - 1] = { sender: 'ai', text: aiResponse };
             saveToLocalStorage();
             renderChatUI();
 
         } catch (err) {
-            const errorMsg = err.message || "網絡連接出現問題，請稍後再試。";
-            appState.chatHistory.push({ sender: 'ai', text: errorMsg });
-            saveToLocalStorage();
+            appState.chatHistory[appState.chatHistory.length - 1] = {
+                sender: 'ai',
+                text: `⚠️ 對話連線出錯：${err.message}`
+            };
             renderChatUI();
         }
     }
@@ -1612,6 +1748,7 @@
         safeSetVal('setting-target-cal', appState.dailyTargetCal);
         safeSetVal('setting-api-key', appState.apiKey || '');
         safeSetVal('setting-api-proxy', appState.apiProxyUrl || '');
+        safeSetVal('setting-model-select', appState.selectedModel || 'auto');
 
         const modal = document.getElementById('settings-modal');
         if (modal) modal.classList.remove('hidden');
@@ -1629,45 +1766,20 @@
         appState.dailyTargetCal = parseInt(document.getElementById('setting-target-cal')?.value) || 1450;
         appState.apiKey = document.getElementById('setting-api-key')?.value.trim() || '';
         appState.apiProxyUrl = document.getElementById('setting-api-proxy')?.value.trim() || '';
+        appState.selectedModel = document.getElementById('setting-model-select')?.value || 'auto';
 
         saveToLocalStorage();
         renderAll();
         closeSettingsModal();
-        alert('設定已成功儲存！');
+        showToast("設定已順利儲存！", "success");
     }
 
     function resetAllData() {
-        if (confirm("確定要重置所有飲食、體重及對話資料？")) {
+        if (confirm("確定要重置所有飲食、運動與體重歷史記錄嗎？此動作無法復原。")) {
             localStorage.removeItem('ai_diet_app_state');
             location.reload();
         }
     }
-
-    window.switchTab = switchTab;
-    window.openSettingsModal = openSettingsModal;
-    window.closeSettingsModal = closeSettingsModal;
-    window.saveSettings = saveSettings;
-    window.resetAllData = resetAllData;
-    window.openWorkoutModal = openWorkoutModal;
-    window.closeWorkoutModal = closeWorkoutModal;
-    window.saveWorkoutEntry = saveWorkoutEntry;
-    window.deleteWorkout = deleteWorkout;
-    window.openEditMealModal = openEditMealModal;
-    window.closeEditMealModal = closeEditMealModal;
-    window.saveEditMeal = saveEditMeal;
-    window.deleteMeal = deleteMeal;
-    window.openWeightModal = openWeightModal;
-    window.closeWeightModal = closeWeightModal;
-    window.saveWeightEntry = saveWeightEntry;
-    window.deleteWeightRecord = deleteWeightRecord;
-    window.addWater = addWater;
-    window.handleFileSelect = handleFileSelect;
-    window.analyzeMealImage = analyzeMealImage;
-    window.saveMealToLog = saveMealToLog;
-    window.sendChatMessage = sendChatMessage;
-    window.changeDashboardDate = changeDashboardDate;
-    window.shiftDashboardDate = shiftDashboardDate;
-    window.resetDashboardToToday = resetDashboardToToday;
 </script>
 </body>
 </html>
