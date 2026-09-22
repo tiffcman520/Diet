@@ -1,3 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 減肥專屬營養師</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-emerald {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased pb-20 md:pb-0">
+
 <!-- Top Navigation Header -->
 <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -602,8 +622,11 @@
         <div class="space-y-3 pt-2 border-t border-slate-100">
             <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Gemini API 設定</h4>
             <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key</label>
-                <input type="password" id="setting-api-key" placeholder="貼上你的 API Key (AIzaSy...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gemini API Key (支援填入多個 Key)</label>
+                <input type="password" id="setting-api-key" placeholder="貼上 API Key (若有多個，請用逗號分隔 AIzaSy1..., AIzaSy2...)" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                <p class="text-[10px] text-slate-500 mt-1">
+                    💡 <b>遇到 Limit / 額度限制？</b> 可填入多個由不同 Google 帳戶申請的 Key（用逗號 `,` 分隔），當其中一個爆上限，系統會自動切換至下一個備用 Key！
+                </p>
             </div>
 
             <div>
@@ -721,12 +744,18 @@
         'gemini-1.5-flash'
     ];
 
-    // Dynamic API URL Generator with Model Parameter
-    function getGeminiEndpoint(modelName) {
+    // Get array of API Keys (Support multiple comma-separated keys for rate-limit rotation)
+    function getApiKeysList() {
+        if (!appState.apiKey) return [];
+        return appState.apiKey.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+    }
+
+    // Dynamic API URL Generator
+    function getGeminiEndpoint(modelName, key) {
         let baseUrl = (appState.apiProxyUrl && appState.apiProxyUrl.trim()) 
             ? appState.apiProxyUrl.trim().replace(/\/+$/, '') 
             : 'https://generativelanguage.googleapis.com';
-        return `${baseUrl}/v1beta/models/${modelName}:generateContent?key=${appState.apiKey}`;
+        return `${baseUrl}/v1beta/models/${modelName}:generateContent?key=${key}`;
     }
 
     // Handle Location Not Supported Error
@@ -738,15 +767,24 @@
         return false;
     }
 
-    // Smart API Request Handler with Fallback & Retry Logic
+    // Smart API Request Handler with Multi-Key Rotation & Model Fallback
     async function fetchGeminiWithFallback(requestBody) {
+        const keysList = getApiKeysList();
+        if (keysList.length === 0) {
+            throw new Error("請先在設定中填入 Gemini API Key！");
+        }
+
         let lastErrorMsg = '';
 
-        for (let modelIndex = 0; modelIndex < GEMINI_MODELS.length; modelIndex++) {
-            const model = GEMINI_MODELS[modelIndex];
-            const apiUrl = getGeminiEndpoint(model);
+        // Iterate through all provided API Keys
+        for (let kIdx = 0; kIdx < keysList.length; kIdx++) {
+            const currentKey = keysList[kIdx];
 
-            for (let retry = 0; retry < 2; retry++) {
+            // Iterate through available Gemini Models
+            for (let modelIndex = 0; modelIndex < GEMINI_MODELS.length; modelIndex++) {
+                const model = GEMINI_MODELS[modelIndex];
+                const apiUrl = getGeminiEndpoint(model, currentKey);
+
                 try {
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -760,26 +798,30 @@
                         const msg = data.error.message || JSON.stringify(data.error);
                         lastErrorMsg = msg;
 
-                        // High Demand or Rate Limit or Service Unavailable
-                        if (msg.toLowerCase().includes("high demand") || 
-                            msg.toLowerCase().includes("overloaded") || 
-                            msg.toLowerCase().includes("resource_exhausted") || 
-                            msg.toLowerCase().includes("quota") ||
-                            response.status === 429 || response.status === 503) {
-                            console.warn(`Model ${model} is busy/overloaded. Waiting 1.5s then fallback...`);
-                            await new Promise(r => setTimeout(r, 1500));
-                            break; // try next model
-                        }
-
-                        // If location error, fail immediately to inform user
                         if (handleLocationError(msg)) {
                             throw new Error(msg);
+                        }
+
+                        // Rate Limit / Quota Exceeded / High Demand
+                        if (msg.toLowerCase().includes("quota") || 
+                            msg.toLowerCase().includes("resource_exhausted") || 
+                            msg.toLowerCase().includes("high demand") || 
+                            msg.toLowerCase().includes("overloaded") || 
+                            response.status === 429 || response.status === 503) {
+                            console.warn(`Key #${kIdx+1} with Model ${model} hit limit/overload. Switching route...`);
+                            
+                            // If multiple keys available and this key hit quota, try next key!
+                            if (keysList.length > 1) {
+                                break; // Break model loop, switch to next Key
+                            }
+                            await new Promise(r => setTimeout(r, 1000));
+                            continue; // Try next model for current key
                         }
 
                         throw new Error(msg);
                     }
 
-                    // Success! Return data
+                    // Success!
                     return data;
 
                 } catch (err) {
@@ -787,17 +829,14 @@
                     if (lastErrorMsg.includes("location is not supported")) {
                         throw err;
                     }
-                    // Retry current model once before switching
-                    await new Promise(r => setTimeout(r, 1000));
                 }
             }
         }
 
-        // If all fallback models failed due to high demand
-        if (lastErrorMsg.toLowerCase().includes("high demand") || 
-            lastErrorMsg.toLowerCase().includes("overloaded") || 
-            lastErrorMsg.toLowerCase().includes("resource_exhausted")) {
-            throw new Error("⚠️ Google 官方伺服器目前繁忙 (High Demand)。所有備用路線均超載，請等待 5 至 10 秒後再試一次！");
+        if (lastErrorMsg.toLowerCase().includes("quota") || 
+            lastErrorMsg.toLowerCase().includes("resource_exhausted") || 
+            lastErrorMsg.toLowerCase().includes("429")) {
+            throw new Error("⚠️ 已達到 Google API 使用次數上限 (Rate Limit / Quota Exceeded)。\n\n【建議解法】\n1. 請稍等 1-2 分鐘重試（頻率限制會自動解鎖）。\n2. 或在「設定」中填入第二個 API Key（用逗號分隔），系統會自動輪換！");
         }
 
         throw new Error(lastErrorMsg || "請求失敗，請稍後再試。");
@@ -1125,19 +1164,26 @@
             const base64Data = match ? match[2] : selectedBase64Image.replace(/^data:image\/\w+;base64,/, '');
 
             const promptText = `你是一位專業香港廣東話減肥營養師。
+
 用戶資料：身高 ${appState.heightCm}cm，目前體重 ${appState.currentWeight}kg，目標體重 ${appState.targetWeight}kg（每日熱量赤字目標：${appState.dailyTargetCal} kcal）。
 這是一張用戶【${mealType}】的餐點相片。
-用戶補充說明：${mealNotes}。請仔細辨識圖片中的食材、份量與烹調方式（特別注意港式/外賣常見油份與醬汁），估算卡路里與三大營養素，並根據其減肥目標給予 1-10 分的健康減肥評分。請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何額外說明）：
+用戶補充說明：${mealNotes}。
+
+請仔細辨識圖片中的食材、份量與烹調方式（特別注意港式/外賣常見油份與醬汁），估算卡路里與三大營養素，並根據其減肥目標給予 1-10 分的健康減肥評分。
+
+請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何額外說明）：
 {
-"title": "精準辨識食物名稱 (例如: 港式切雞飯少汁配焯菜)",
-"score": 8.0,
-"calories": 520,
-"protein": 28,
-"carbs": 60,
-"fats": 16,
-"pros": "優點分析（廣東話，指出對其減肥目標的好處）",
-"suggestions": "減肥改善建議（廣東話，如少油、改配冰無糖茶、飯量減少等）"
-}`;            const requestBody = {
+  "title": "精準辨識食物名稱 (例如: 港式切雞飯少汁配焯菜)",
+  "score": 8.0,
+  "calories": 520,
+  "protein": 28,
+  "carbs": 60,
+  "fats": 16,
+  "pros": "優點分析（廣東話，指出對其減肥目標的好處）",
+  "suggestions": "減肥改善建議（廣東話，如少油、改配冰無糖茶、飯量減少等）"
+}`;
+
+            const requestBody = {
                 contents: [
                     {
                         parts: [
@@ -1191,7 +1237,7 @@
             alert("相片分析提示：" + (err.message || "請檢查 API Key 或網絡連線。"));
         } finally {
             if (btn) btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> 開始 AI 多模態視覺評價`;
-            lucide.createIcons();
+            renderIcons();
         }
     }
 
@@ -1533,7 +1579,7 @@
             </div>
         `;
         messagesContainer.appendChild(aiLoadingBubble);
-        lucide.createIcons();
+        renderIcons();
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
         try {
@@ -1623,3 +1669,5 @@
     window.shiftDashboardDate = shiftDashboardDate;
     window.resetDashboardToToday = resetDashboardToToday;
 </script>
+</body>
+</html>
