@@ -690,6 +690,35 @@
             return `${hours}:${minutes}`;
         }
 
+        // Tab Navigation Function (Explicitly bound to window for inline onclick handlers)
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'font-semibold');
+                btn.classList.add('text-slate-600', 'font-medium');
+            });
+
+            const activeNav = document.getElementById('nav-' + tabId);
+            if (activeNav) {
+                activeNav.classList.add('bg-emerald-50', 'text-emerald-600', 'font-semibold');
+                activeNav.classList.remove('text-slate-600', 'font-medium');
+            }
+        }
+
+        // Safe Lucide icon renderer helper
+        function renderIcons() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.warn("Lucide icons render warning:", e);
+                }
+            }
+        }
+
         // Current active selected dashboard date
         let selectedDashboardDate = getTodayStr();
 
@@ -722,31 +751,14 @@
         let selectedBase64Image = null;
         let weightChart = null;
 
-        // Initialize App on Load
+        // Initialize App on Load safely
         window.onload = function() {
             loadFromLocalStorage();
             initDashboardDate();
-            lucide.createIcons();
+            renderIcons();
             initChart();
             renderAll();
         };
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            const targetTab = document.getElementById('tab-' + tabId);
-            if (targetTab) targetTab.classList.remove('hidden');
-
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'font-semibold');
-                btn.classList.add('text-slate-600', 'font-medium');
-            });
-
-            const activeNav = document.getElementById('nav-' + tabId);
-            if (activeNav) {
-                activeNav.classList.add('bg-emerald-50', 'text-emerald-600', 'font-semibold');
-                activeNav.classList.remove('text-slate-600', 'font-medium');
-            }
-        }
 
         function initDashboardDate() {
             safeSetVal('dash-date-picker', selectedDashboardDate);
@@ -885,7 +897,7 @@
                         </button>
                     </div>
                 `;
-                lucide.createIcons();
+                renderIcons();
                 return;
             }
 
@@ -922,7 +934,7 @@
                 `;
                 container.appendChild(item);
             });
-            lucide.createIcons();
+            renderIcons();
         }
 
         function deleteMeal(id) {
@@ -950,7 +962,7 @@
                         </button>
                     </div>
                 `;
-                lucide.createIcons();
+                renderIcons();
                 updateNetCalorieUI();
                 return;
             }
@@ -984,7 +996,7 @@
                 `;
                 container.appendChild(item);
             });
-            lucide.createIcons();
+            renderIcons();
             updateNetCalorieUI();
         }
 
@@ -1080,7 +1092,7 @@
 
 請仔細辨識圖片中的食材、份量與烹調方式（特別注意港式/外賣常見油份與醬汁），估算卡路里與三大營養素，並根據其減肥目標給予 1-10 分的健康減肥評分。
 
-請嚴格回傳 Valid JSON 格式（不要包含 markdown ```json 標記之外的多餘文字，只回傳純JSON字串）：
+請嚴格回傳 Valid JSON 格式（只回傳純 JSON 字串，不要包含任何額外說明）：
 {
   "title": "精準辨識食物名稱 (例如: 港式切雞飯少汁配焯菜)",
   "score": 8.0,
@@ -1301,44 +1313,78 @@
         // Weight Progress & Chart System
         function initChart() {
             const canvas = document.getElementById('weightChart');
-            if (!canvas) return;
+            if (!canvas || typeof Chart === 'undefined') return;
 
-            const ctx = canvas.getContext('2d');
-            weightChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: appState.weightData.map(d => d.date),
-                    datasets: [
-                        {
-                            label: '體重 (kg)',
-                            data: appState.weightData.map(d => d.weight),
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#059669'
-                        },
-                        {
-                            label: '目標',
-                            data: appState.weightData.map(() => appState.targetWeight),
-                            borderColor: '#cbd5e1',
-                            borderDash: [5, 5],
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            ticks: { callback: v => v + ' kg' }
+            try {
+                const ctx = canvas.getContext('2d');
+                weightChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: appState.weightData.map(d => d.date),
+                        datasets: [
+                            {
+                                label: '體重 (kg)',
+                                data: appState.weightData.map(d => d.weight),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#059669'
+                            },
+                            {
+                                label: '目標',
+                                data: appState.targetWeight ? appState.weightData.map(() => appState.targetWeight) : [],
+                                borderColor: '#cbd5e1',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                ticks: { callback: v => v + ' kg' }
+                            }
                         }
                     }
-                }
+                });
+            } catch (e) {
+                console.warn("Chart initialization failed:", e);
+            }
+        }
+
+        function renderWeightTable() {
+            const table = document.getElementById('weight-history-table');
+            if (!table) return;
+
+            table.innerHTML = '';
+            
+            const sorted = [...appState.weightData].reverse();
+            sorted.forEach((item) => {
+                const diff = (item.weight - appState.startWeight).toFixed(1);
+                const diffText = diff <= 0 ? `${diff} kg` : `+${diff} kg`;
+                const bmi = (item.weight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
+
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-100";
+                row.innerHTML = `
+                    <td class="p-2.5 text-slate-700 font-medium">${item.date}</td>
+                    <td class="p-2.5 font-extrabold text-slate-900">${item.weight.toFixed(1)} kg</td>
+                    <td class="p-2.5 text-amber-600 font-semibold">${bmi}</td>
+                    <td class="p-2.5 ${diff <= 0 ? 'text-emerald-600 font-bold' : 'text-rose-500'}">${diffText}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteWeightRecord('${item.date}')" class="text-slate-400 hover:text-rose-500">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                `;
+                table.appendChild(row);
             });
+            renderIcons();
         }
 
         function updateProgressUI() {
@@ -1403,36 +1449,6 @@
 
             renderWeightTable();
             closeWeightModal();
-        }
-
-        function renderWeightTable() {
-            const table = document.getElementById('weight-history-table');
-            if (!table) return;
-
-            table.innerHTML = '';
-            
-            const sorted = [...appState.weightData].reverse();
-            sorted.forEach((item) => {
-                const diff = (item.weight - appState.startWeight).toFixed(1);
-                const diffText = diff <= 0 ? `${diff} kg` : `+${diff} kg`;
-                const bmi = (item.weight / Math.pow(appState.heightCm / 100, 2)).toFixed(1);
-
-                const row = document.createElement('tr');
-                row.className = "border-b border-slate-100";
-                row.innerHTML = `
-                    <td class="p-2.5 text-slate-700 font-medium">${item.date}</td>
-                    <td class="p-2.5 font-extrabold text-slate-900">${item.weight.toFixed(1)} kg</td>
-                    <td class="p-2.5 text-amber-600 font-semibold">${bmi}</td>
-                    <td class="p-2.5 ${diff <= 0 ? 'text-emerald-600 font-bold' : 'text-rose-500'}">${diffText}</td>
-                    <td class="p-2.5 text-right">
-                        <button onclick="deleteWeightRecord('${item.date}')" class="text-slate-400 hover:text-rose-500">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </td>
-                `;
-                table.appendChild(row);
-            });
-            lucide.createIcons();
         }
 
         function deleteWeightRecord(date) {
@@ -1568,6 +1584,32 @@
                 location.reload();
             }
         }
+
+        window.switchTab = switchTab;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
+        window.saveSettings = saveSettings;
+        window.resetAllData = resetAllData;
+        window.openWorkoutModal = openWorkoutModal;
+        window.closeWorkoutModal = closeWorkoutModal;
+        window.saveWorkoutEntry = saveWorkoutEntry;
+        window.deleteWorkout = deleteWorkout;
+        window.openEditMealModal = openEditMealModal;
+        window.closeEditMealModal = closeEditMealModal;
+        window.saveEditMeal = saveEditMeal;
+        window.deleteMeal = deleteMeal;
+        window.openWeightModal = openWeightModal;
+        window.closeWeightModal = closeWeightModal;
+        window.saveWeightEntry = saveWeightEntry;
+        window.deleteWeightRecord = deleteWeightRecord;
+        window.addWater = addWater;
+        window.handleFileSelect = handleFileSelect;
+        window.analyzeMealImage = analyzeMealImage;
+        window.saveMealToLog = saveMealToLog;
+        window.sendChatMessage = sendChatMessage;
+        window.changeDashboardDate = changeDashboardDate;
+        window.shiftDashboardDate = shiftDashboardDate;
+        window.resetDashboardToToday = resetDashboardToToday;
     </script>
 </body>
 </html>
