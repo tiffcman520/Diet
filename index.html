@@ -1104,7 +1104,7 @@
   "suggestions": "減肥改善建議（廣東話，如少油、改配冰無糖茶、飯量減少等）"
 }`;
 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appState.apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${appState.apiKey}`;
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -1522,7 +1522,7 @@
             try {
                 const systemPrompt = `你是一位友善、專業的廣東話減肥營養師。用戶資料：身高 ${appState.heightCm}cm，目前體重 ${appState.currentWeight}kg，目標 ${appState.targetWeight}kg（每日1400-1500kcal赤字）。請用親切廣東話簡潔解答。`;
                 const apiKey = appState.apiKey || "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
