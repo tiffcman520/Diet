@@ -635,9 +635,10 @@
                 <div class="flex gap-2">
                     <select id="setting-model-select" class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                         <option value="auto">🤖 自動最佳化 (Auto-Fallback)</option>
-                        <option value="gemini-2.0-flash">gemini-2.0-flash (最新推薦)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (推薦)</option>
+                        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (最新輕量)</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                         <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         <option value="gemini-1.5-pro">gemini-1.5-pro</option>
                     </select>
                     <button id="btn-detect-models" onclick="detectAvailableModels()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold whitespace-nowrap transition">
@@ -788,11 +789,11 @@
 
     // Standard Gemini Models for Automatic Fallback Loop
     const GEMINI_MODELS = [
+        'gemini-2.5-flash',
+        'gemini-3.5-flash-lite',
         'gemini-2.0-flash',
         'gemini-1.5-flash',
-        'gemini-2.5-flash',
-        'gemini-1.5-pro',
-        'gemini-2.0-flash-lite'
+        'gemini-1.5-pro'
     ];
 
     // Get array of API Keys (Support multiple comma-separated keys for rate-limit rotation)
